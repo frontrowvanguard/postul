@@ -1,4 +1,5 @@
 import { BlurView } from 'expo-blur';
+import { isLiquidGlassSupported, LiquidGlassView } from '@callstack/liquid-glass';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState, useEffect } from 'react';
@@ -47,7 +48,7 @@ export default function HomeScreen() {
     const { results, isFinal } = event;
     if (results && results.length > 0) {
       const transcript = results[0].transcript;
-      
+
       console.log('Speech recognition result:', {
         transcript,
         isFinal,
@@ -84,7 +85,7 @@ export default function HomeScreen() {
       try {
         const available = ExpoSpeechRecognitionModule.isRecognitionAvailable();
         console.log('Speech recognition available:', available);
-        
+
         if (!available) {
           Alert.alert(
             'Not Available',
@@ -105,7 +106,7 @@ export default function HomeScreen() {
         if (Platform.OS === 'ios') {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
-        
+
         await ExpoSpeechRecognitionModule.stop();
         console.log('Stopped speech recognition');
       } else {
@@ -114,13 +115,13 @@ export default function HomeScreen() {
         if (Platform.OS === 'ios') {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
-        
+
         await ExpoSpeechRecognitionModule.start({
           lang: 'en-US',
           interimResults: true, // Get partial results as user speaks
           continuous: false, // Stop after first final result
         });
-        
+
         setIsRecording(true);
         console.log('Started speech recognition');
       }
@@ -183,13 +184,20 @@ export default function HomeScreen() {
           </GlassCard>
 
           {/* Projects Card */}
-          <GlassCard
+          {/* <GlassCard
             style={[
               styles.projectsCard,
               isRecording && styles.projectsCardGrayscaled
             ]}
             intensity={20}
-            tint="light">
+            tint="light"> */}
+          <LiquidGlassView
+            style={[
+              styles.projectsCard,
+              isRecording && styles.projectsCardGrayscaled
+            ]}
+            interactive
+            effect="clear">
             <ScrollView>
               {SAMPLE_PROJECTS.map((project, index) => (
                 <View key={project.id}>
@@ -226,12 +234,20 @@ export default function HomeScreen() {
                 </View>
               ))}
             </ScrollView>
-          </GlassCard>
+          </LiquidGlassView>
         </ScrollView>
 
         {/* Bottom Navigation */}
         <View style={styles.bottomNavContainer}>
-          <BlurView intensity={50} tint="light" style={styles.bottomNav}>
+          {/* <BlurView intensity={50} tint="light" style={styles.bottomNav}> */}
+          <LiquidGlassView
+            style={[
+              styles.bottomNav,
+              !isLiquidGlassSupported && { backgroundColor: 'rgba(255,255,255,0.5)' },
+            ]}
+            interactive
+            effect="clear">
+
             {/* Voice Record Button */}
             <Pressable
               onPress={handleToggleRecord}
@@ -255,7 +271,8 @@ export default function HomeScreen() {
                 </LinearGradient>
               )}
             </Pressable>
-          </BlurView>
+          </LiquidGlassView>
+          {/* </BlurView> */}
         </View>
       </LinearGradient>
     </View>
@@ -329,7 +346,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   topCardTitle: {
-    fontSize: 38,
+    fontSize: 40,
     fontWeight: '200',
     color: '#999',
     textAlign: 'center',
@@ -337,6 +354,9 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     letterSpacing: 0.5,
     fontFamily: defaultFontFamily,
+    shadowColor: '#000',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   topCardSubtitle: {
     fontSize: 16,
@@ -431,9 +451,6 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     borderRadius: 50,
     overflow: 'hidden',
-    borderWidth: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderColor: 'rgba(255, 255, 255)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
