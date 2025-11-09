@@ -1,9 +1,9 @@
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View, StatusBar, Alert } from 'react-native';
-import { Audio } from 'expo-av';
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import * as Haptics from 'expo-haptics';
 
 import { GlassCard } from '@/components/glass-card';
@@ -33,82 +33,100 @@ const SAMPLE_PROJECTS = [
 
 export default function HomeScreen() {
   const [isRecording, setIsRecording] = useState(false);
-  const recordingRef = useRef<Audio.Recording | null>(null);
+
+  // Listen to speech recognition events
+  useSpeechRecognitionEvent('start', () => {
+    console.log('Speech recognition started');
+  });
+
+  useSpeechRecognitionEvent('audiostart', () => {
+    console.log('Audio capture started');
+  });
+
+  useSpeechRecognitionEvent('result', (event) => {
+    const { results, isFinal } = event;
+    if (results && results.length > 0) {
+      const transcript = results[0].transcript;
+      
+      console.log('Speech recognition result:', {
+        transcript,
+        isFinal,
+        confidence: results[0].confidence,
+        allResults: results,
+      });
+
+      if (isFinal) {
+        console.log('=== FINAL TRANSCRIPTION ===');
+        console.log(transcript);
+        console.log('===========================');
+      }
+    }
+  });
+
+  useSpeechRecognitionEvent('audioend', () => {
+    console.log('Audio capture ended');
+  });
+
+  useSpeechRecognitionEvent('end', () => {
+    console.log('Speech recognition ended');
+    setIsRecording(false);
+  });
+
+  useSpeechRecognitionEvent('error', (event) => {
+    console.error('Speech recognition error:', event.error);
+    Alert.alert('Recognition Error', event.error || 'An error occurred during speech recognition.');
+    setIsRecording(false);
+  });
 
   useEffect(() => {
-    // Request audio permissions on mount
+    // Check if speech recognition is available
     (async () => {
       try {
-        const permissionResponse = await Audio.requestPermissionsAsync();
-        if (permissionResponse.status !== 'granted') {
+        const available = ExpoSpeechRecognitionModule.isRecognitionAvailable();
+        console.log('Speech recognition available:', available);
+        
+        if (!available) {
           Alert.alert(
-            'Permission Required',
-            'Please grant microphone permission to use voice recording.',
+            'Not Available',
+            'Speech recognition is not available on this device.',
           );
         }
       } catch (error) {
-        console.error('Error requesting audio permissions:', error);
+        console.error('Error checking speech recognition availability:', error);
       }
     })();
-
-    // Cleanup on unmount
-    return () => {
-      if (recordingRef.current) {
-        recordingRef.current.stopAndUnloadAsync();
-      }
-    };
   }, []);
 
   const handleToggleRecord = async () => {
     try {
       if (isRecording) {
-        // Stop recording
-        if (recordingRef.current) {
-          // Haptic feedback for stop
-          if (Platform.OS === 'ios') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          }
-          
-          await recordingRef.current.stopAndUnloadAsync();
-          const uri = recordingRef.current.getURI();
-          console.log('Recording saved to:', uri);
-          recordingRef.current = null;
-          setIsRecording(false);
+        // Stop recognition
+        // Haptic feedback for stop
+        if (Platform.OS === 'ios') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
+        
+        await ExpoSpeechRecognitionModule.stop();
+        console.log('Stopped speech recognition');
       } else {
-        // Start recording
-        try {
-          // Haptic feedback for start
-          if (Platform.OS === 'ios') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          }
-          
-          await Audio.setAudioModeAsync({
-            allowsRecordingIOS: true,
-            playsInSilentModeIOS: true,
-          });
-
-          const { recording: newRecording } = await Audio.Recording.createAsync(
-            Audio.RecordingOptionsPresets.HIGH_QUALITY,
-          );
-          
-          recordingRef.current = newRecording;
-          setIsRecording(true);
-          
-          // Listen for recording status updates
-          newRecording.setOnRecordingStatusUpdate((status) => {
-            if (status.isDoneRecording) {
-              setIsRecording(false);
-            }
-          });
-        } catch (error) {
-          console.error('Error starting recording:', error);
-          Alert.alert('Recording Error', 'Failed to start recording. Please try again.');
+        // Start recognition
+        // Haptic feedback for start
+        if (Platform.OS === 'ios') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
+        
+        await ExpoSpeechRecognitionModule.start({
+          lang: 'en-US',
+          interimResults: true, // Get partial results as user speaks
+          continuous: false, // Stop after first final result
+        });
+        
+        setIsRecording(true);
+        console.log('Started speech recognition');
       }
-    } catch (error) {
-      console.error('Error toggling recording:', error);
-      Alert.alert('Error', 'Something went wrong with the recording.');
+    } catch (error: any) {
+      console.error('Error toggling speech recognition:', error);
+      Alert.alert('Error', error.message || 'Something went wrong with speech recognition.');
       setIsRecording(false);
     }
   };
