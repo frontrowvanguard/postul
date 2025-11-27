@@ -120,3 +120,18 @@ class TikiTakaResponse(BaseModel):
     """Response model for tiki-taka conversation."""
     advisor_message: str = Field(..., description="Advisor's response to help user think through their idea")
     conversation_history: List[TikiTakaMessage] = Field(..., description="Updated conversation history including the new exchange")
+
+
+class TTSRequest(BaseModel):
+    """Request model for text-to-speech synthesis."""
+    text: str = Field(..., min_length=1, max_length=5000, description="Text to convert to speech")
+    inference_steps: int = Field(default=2, ge=1, le=10, description="Number of inference steps (1-10)")
+    style_id: int = Field(default=0, ge=0, description="Voice style ID")
+    speed: float = Field(default=1.05, ge=0.5, le=2.0, description="Speech speed multiplier")
+
+
+class TTSResponse(BaseModel):
+    """Response model for text-to-speech synthesis."""
+    audio_base64: str = Field(..., description="Base64-encoded WAV audio data")
+    text: str = Field(..., description="Original text that was synthesized")
+    sample_rate: int = Field(..., description="Audio sample rate")

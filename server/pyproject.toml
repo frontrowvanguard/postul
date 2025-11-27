@@ -16,4 +16,10 @@ dependencies = [
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "greenlet>=3.2.4",
+    "onnxruntime>=1.18.0",
+    "soundfile>=0.12.0",
+    "numpy>=1.24.0",
 ]
+
+[project.scripts]
+download-supertonic-models = "scripts.download_supertonic_models:main"
