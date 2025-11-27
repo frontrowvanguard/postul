@@ -11,6 +11,8 @@ import { apiService, Project } from '@/services/api';
 import { useRouter } from 'expo-router';
 import { ConversationListSidepanel } from '@/components/conversation-list-sidepanel';
 import { SettingsPanel } from '@/components/settings-panel';
+import { ModeSelectionBottomSheet } from '@/components/mode-selection-bottom-sheet';
+import { BottomNavigation } from '@/components/bottom-navigation';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -22,6 +24,8 @@ export default function HomeScreen() {
   const finalTranscriptRef = useRef<string>('');
   const [isSidepanelVisible, setIsSidepanelVisible] = useState(false);
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+  const [conversationMode, setConversationMode] = useState<'single-turn' | 'tiki-taka'>('single-turn');
+  const [isModeSheetVisible, setIsModeSheetVisible] = useState(false);
 
   // Listen to speech recognition events
   useSpeechRecognitionEvent('start', () => {
@@ -379,52 +383,15 @@ export default function HomeScreen() {
         </ScrollView>
 
         {/* Bottom Navigation */}
-        <View style={styles.bottomNavContainer}>
-          <LiquidGlassView style={styles.bottomNav} interactive effect="clear">
-            <Pressable
-              style={styles.bottomNavIcon}
-              onPress={() => {
-                if (Platform.OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-              }}>
-              <Ionicons name="keypad-outline" size={24} color="#666" />
-            </Pressable>
-            <Pressable
-              style={styles.bottomNavCenter}
-              onPress={handleToggleRecord}
-              disabled={isAnalyzing}>
-              {isRecording || isAnalyzing ? (
-                <LiquidGlassView style={styles.bottomNavCenterInner} interactive effect="clear">
-                  {isAnalyzing ? (
-                    <ActivityIndicator size="small" color="#666" />
-                  ) : (
-                    <Ionicons name="mic" size={24} color="#666" />
-                  )}
-                </LiquidGlassView>
-              ) : (
-                <LinearGradient
-                  colors={['#FF4444', '#0066FF']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.bottomNavCenterGradient}>
-                  <LiquidGlassView style={styles.bottomNavCenterInner} interactive effect="clear">
-                  </LiquidGlassView>
-                </LinearGradient>
-              )}
-            </Pressable>
-            <Pressable
-              style={styles.bottomNavIcon}
-              onPress={() => {
-                if (Platform.OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                setIsSidepanelVisible(true);
-              }}>
-              <Ionicons name="list-outline" size={24} color="#666" />
-            </Pressable>
-          </LiquidGlassView>
-        </View>
+        <BottomNavigation
+          conversationMode={conversationMode}
+          onModeSwitchPress={() => setIsModeSheetVisible(true)}
+          onRecordPress={handleToggleRecord}
+          onListPress={() => setIsSidepanelVisible(true)}
+          isRecording={isRecording}
+          isAnalyzing={isAnalyzing}
+          disabled={isRecording || isAnalyzing}
+        />
 
         {/* Conversation List Sidepanel */}
         <ConversationListSidepanel
@@ -436,6 +403,17 @@ export default function HomeScreen() {
         <SettingsPanel
           visible={isSettingsVisible}
           onClose={() => setIsSettingsVisible(false)}
+        />
+
+        {/* Mode Selection Bottom Sheet */}
+        <ModeSelectionBottomSheet
+          visible={isModeSheetVisible}
+          currentMode={conversationMode}
+          onClose={() => setIsModeSheetVisible(false)}
+          onSelectMode={(mode) => {
+            setConversationMode(mode);
+            setIsModeSheetVisible(false);
+          }}
         />
       </LinearGradient>
     </View>
@@ -600,58 +578,6 @@ const styles = StyleSheet.create({
   },
   grayscaledText: {
     opacity: 0.6,
-  },
-  bottomNavContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    paddingBottom: Platform.OS === 'ios' ? 30 : 15,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 30,
-    paddingVertical: 16,
-    borderRadius: 50,
-    minWidth: '80%',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  bottomNavIcon: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bottomNavCenter: {
-    width: 60,
-    height: 60,
-  },
-  bottomNavCenterGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 30,
-    padding: 2,
-  },
-  bottomNavCenterInner: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   loadingContainer: {
     padding: 40,

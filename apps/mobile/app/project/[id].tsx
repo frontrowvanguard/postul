@@ -23,6 +23,7 @@ import Animated, {
 
 import { defaultFontFamily } from '@/constants/theme';
 import { apiService, Idea, Project } from '@/services/api';
+import { BottomNavigation } from '@/components/bottom-navigation';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -67,6 +68,7 @@ export default function ProjectDetailScreen() {
     const [idea, setIdea] = useState<Idea | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [summaryExpanded, setSummaryExpanded] = useState(false);
+    const [conversationMode, setConversationMode] = useState<'single-turn' | 'tiki-taka'>('single-turn');
 
     const loadProjectData = useCallback(async () => {
         if (!id) return;
@@ -377,44 +379,19 @@ export default function ProjectDetailScreen() {
                 </ScrollView>
 
                 {/* Bottom Navigation */}
-                <View style={styles.bottomNavContainer}>
-                    <LiquidGlassView style={styles.bottomNav} interactive effect="clear">
-                        <Pressable
-                            style={styles.bottomNavIcon}
-                            onPress={() => {
-                                if (Platform.OS === 'ios') {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                }
-                            }}>
-                            <Ionicons name="keypad-outline" size={24} color="#666" />
-                        </Pressable>
-                        <Pressable
-                            style={styles.bottomNavCenter}
-                            onPress={() => {
-                                if (Platform.OS === 'ios') {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                }
-                            }}>
-                            <LinearGradient
-                                colors={['#FF4444', '#0066FF']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.bottomNavCenterGradient}>
-                                <LiquidGlassView style={styles.bottomNavCenterInner} interactive effect="clear">
-                                </LiquidGlassView>
-                            </LinearGradient>
-                        </Pressable>
-                        <Pressable
-                            style={styles.bottomNavIcon}
-                            onPress={() => {
-                                if (Platform.OS === 'ios') {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                }
-                            }}>
-                            <Ionicons name="list-outline" size={24} color="#666" />
-                        </Pressable>
-                    </LiquidGlassView>
-                </View>
+                <BottomNavigation
+                    conversationMode={conversationMode}
+                    onModeSwitchPress={() => {
+                        // TODO: Open mode selection sheet
+                        console.log('Mode switch pressed');
+                    }}
+                    onRecordPress={() => {
+                        if (Platform.OS === 'ios') {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        }
+                        // TODO: Handle record action
+                    }}
+                />
             </LinearGradient>
         </View>
     );
@@ -697,56 +674,6 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 16,
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    bottomNavContainer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-        paddingBottom: Platform.OS === 'ios' ? 30 : 15,
-    },
-    bottomNav: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 30,
-        paddingVertical: 16,
-        borderRadius: 50,
-        minWidth: '80%',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-            },
-            android: {
-                elevation: 8,
-            },
-        }),
-    },
-    bottomNavIcon: {
-        width: 44,
-        height: 44,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    bottomNavCenter: {
-        width: 60,
-        height: 60,
-    },
-    bottomNavCenterGradient: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 30,
-        padding: 2,
-    },
-    bottomNavCenterInner: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 28,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
     },
 });
 
