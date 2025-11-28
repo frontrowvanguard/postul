@@ -30,9 +30,20 @@ COPY . .
 
 # Download Supertonic models (if not already present)
 # This will download models if assets/onnx directory doesn't exist or is empty
-RUN if [ ! -d "assets/onnx" ] || [ -z "$(ls -A assets/onnx/*.onnx 2>/dev/null)" ]; then \
+RUN set -eux && \
+    if [ ! -d "assets/onnx" ] || [ -z "$(ls -A assets/onnx/*.onnx 2>/dev/null)" ]; then \
         echo "Downloading Supertonic models..." && \
-        uv run download-supertonic-models --force || echo "Warning: Model download failed, models may need to be mounted"; \
+        uv run download-supertonic-models --force || ( \
+            echo "ERROR: Model download failed!" && \
+            echo "This might be due to:" && \
+            echo "  1. Network issues" && \
+            echo "  2. Git LFS not properly configured" && \
+            echo "  3. Hugging Face repository access issues" && \
+            echo "You can:" && \
+            echo "  - Mount models as volume: -v ./assets:/app/assets" && \
+            echo "  - Download manually and copy to assets/" && \
+            exit 1 \
+        ); \
     else \
         echo "Models already present, skipping download"; \
     fi
