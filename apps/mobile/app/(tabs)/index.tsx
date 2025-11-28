@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
+import { Audio } from 'expo-av';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 
@@ -31,6 +32,8 @@ export default function HomeScreen() {
   const [initialIdeaContext, setInitialIdeaContext] = useState<string | null>(null);
   const [isWaitingForAdvisor, setIsWaitingForAdvisor] = useState(false);
   const tikiTakaScrollViewRef = useRef<ScrollView>(null);
+  const previousHistoryLengthRef = useRef<number>(0);
+  const soundRef = useRef<Audio.Sound | null>(null);
 
   // Listen to speech recognition events
   useSpeechRecognitionEvent('start', () => {
@@ -227,18 +230,131 @@ export default function HomeScreen() {
 
   // Reset conversation when switching modes
   useEffect(() => {
-    if (conversationMode === 'single-turn') {
-      setTikiTakaHistory([]);
-      setInitialIdeaContext(null);
-    }
+    const cleanup = async () => {
+      if (conversationMode === 'single-turn') {
+        // Stop any ongoing audio playback
+        if (soundRef.current) {
+          try {
+            await soundRef.current.stopAsync();
+            await soundRef.current.unloadAsync();
+          } catch (error) {
+            console.error('Error stopping audio:', error);
+          }
+          soundRef.current = null;
+        }
+        setTikiTakaHistory([]);
+        setInitialIdeaContext(null);
+        previousHistoryLengthRef.current = 0;
+      }
+    };
+    cleanup();
   }, [conversationMode]);
 
-  const clearTikiTakaConversation = () => {
+  // Read advisor messages using TTS when they arrive
+  useEffect(() => {
+    let isMounted = true;
+
+    const playTTSAudio = async (text: string) => {
+      try {
+        // Stop any currently playing audio
+        if (soundRef.current) {
+          await soundRef.current.unloadAsync();
+          soundRef.current = null;
+        }
+
+        // Request audio from server (using base64 endpoint)
+        const ttsResponse = await apiService.synthesizeSpeech({
+          text,
+          inference_steps: 2,
+          style_id: 0,
+        });
+        
+        if (!isMounted) return;
+
+        // Create data URI from base64 audio
+        const audioUri = `data:audio/wav;base64,${ttsResponse.audio_base64}`;
+
+        // Configure audio mode
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+        });
+
+        // Load and play the audio
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: audioUri },
+          { shouldPlay: true, volume: 1.0 }
+        );
+
+        soundRef.current = sound;
+
+        // Clean up when playback finishes
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            console.log('Finished playing advisor message');
+            sound.unloadAsync().catch(console.error);
+            soundRef.current = null;
+          }
+        });
+      } catch (error: any) {
+        console.error('TTS playback error:', error);
+        // Fallback: silently fail, don't interrupt the user experience
+      }
+    };
+
+    // Only process if we're in tiki-taka mode and have messages
+    if (conversationMode !== 'tiki-taka' || tikiTakaHistory.length === 0) {
+      previousHistoryLengthRef.current = tikiTakaHistory.length;
+      return;
+    }
+
+    // Check if a new advisor message was added
+    const currentLength = tikiTakaHistory.length;
+    const previousLength = previousHistoryLengthRef.current;
+
+    if (currentLength > previousLength) {
+      // Find the latest advisor message
+      const latestAdvisorMessage = [...tikiTakaHistory]
+        .reverse()
+        .find(msg => msg.role === 'assistant');
+
+      if (latestAdvisorMessage) {
+        // Play the advisor's message using server TTS
+        playTTSAudio(latestAdvisorMessage.content);
+      }
+    }
+
+    // Update the ref to track the current length
+    previousHistoryLengthRef.current = currentLength;
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (soundRef.current) {
+        soundRef.current.unloadAsync().catch(console.error);
+        soundRef.current = null;
+      }
+    };
+  }, [tikiTakaHistory, conversationMode]);
+
+  const clearTikiTakaConversation = async () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    // Stop any ongoing audio playback
+    if (soundRef.current) {
+      try {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+      } catch (error) {
+        console.error('Error stopping audio:', error);
+      }
+      soundRef.current = null;
+    }
     setTikiTakaHistory([]);
     setInitialIdeaContext(null);
+    previousHistoryLengthRef.current = 0;
   };
 
   const submitTikiTakaConversation = async () => {

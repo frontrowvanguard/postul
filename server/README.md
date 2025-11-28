@@ -143,9 +143,83 @@ server/
 
 Follow PEP 8 and use type hints throughout the codebase.
 
+## Docker Deployment
+
+The server includes Docker support with Git LFS for downloading Supertonic TTS models.
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- `.env` file with all required environment variables
+
+### Quick Start
+
+1. **Build and run with Docker Compose:**
+   ```bash
+   docker-compose up --build
+   ```
+
+2. **For development with hot reload:**
+   ```bash
+   docker-compose -f docker-compose.dev.yml up --build
+   ```
+
+3. **Using Makefile (optional):**
+   ```bash
+   make build      # Build production image
+   make up         # Start production containers
+   make up-dev     # Start development containers
+   make down       # Stop containers
+   make logs       # View logs
+   make shell      # Open shell in container
+   ```
+
+### Docker Features
+
+- **Git LFS Support**: Automatically installs and configures Git LFS for downloading Supertonic models
+- **Automatic Model Download**: Downloads Supertonic TTS models during build if not present
+- **Health Checks**: Built-in health check endpoint monitoring
+- **Volume Mounting**: Option to mount `assets/` directory to persist models outside container
+
+### Manual Model Download in Container
+
+If models need to be downloaded manually:
+
+```bash
+# In running container
+docker-compose exec api uv run download-supertonic-models --force
+
+# Or using shell
+docker-compose exec api bash
+uv run download-supertonic-models --force
+```
+
+### Environment Variables
+
+Create a `.env` file in the `server` directory (see Setup section above). The Docker Compose files will automatically load these variables.
+
+### Production Considerations
+
+- **Model Persistence**: Consider mounting `assets/` as a volume to avoid re-downloading models on container restart
+- **Resource Limits**: TTS models require memory; ensure adequate resources allocated
+- **Health Checks**: The container includes health checks that verify `/health` endpoint
+- **Logging**: Logs are output to stdout/stderr for Docker logging aggregation
+
 ## Deployment
 
 The server is designed to be deployed on any platform that supports Python and FastAPI (e.g., Railway, Render, AWS, GCP).
+
+### Docker Deployment
+
+The included Dockerfile can be used for containerized deployments:
+
+```bash
+# Build image
+docker build -t postul-api .
+
+# Run container
+docker run -p 8000:8000 --env-file .env postul-api
+```
 
 Ensure environment variables are properly set in your deployment environment.
 

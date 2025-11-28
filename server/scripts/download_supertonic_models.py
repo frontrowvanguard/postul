@@ -34,12 +34,13 @@ def check_git_lfs() -> bool:
         return False
 
 
-def download_models(assets_dir: Path) -> bool:
+def download_models(assets_dir: Path, force: bool = False) -> bool:
     """
     Download Supertonic models from Hugging Face.
 
     Args:
         assets_dir: Directory to download assets to
+        force: If True, skip confirmation prompts (useful for Docker/CI)
 
     Returns:
         True if download successful, False otherwise
@@ -50,10 +51,13 @@ def download_models(assets_dir: Path) -> bool:
     # Check if assets directory already has content
     if any(assets_dir.iterdir()):
         logger.warning(f"Assets directory {assets_dir} is not empty")
-        response = input("Do you want to continue and potentially overwrite files? (y/N): ")
-        if response.lower() != "y":
-            logger.info("Download cancelled")
-            return False
+        if not force:
+            response = input("Do you want to continue and potentially overwrite files? (y/N): ")
+            if response.lower() != "y":
+                logger.info("Download cancelled")
+                return False
+        else:
+            logger.info("Force mode enabled, proceeding with download")
 
     try:
         logger.info(f"Downloading Supertonic models from {repo_url}")
@@ -105,6 +109,9 @@ def download_models(assets_dir: Path) -> bool:
 
 def main():
     """Main entry point."""
+    # Check for force flag (useful for Docker/CI)
+    force = "--force" in sys.argv or "-f" in sys.argv
+    
     # Determine assets directory (default: server/assets)
     script_dir = Path(__file__).parent.parent
     assets_dir = script_dir / "assets"
@@ -117,7 +124,7 @@ def main():
         sys.exit(1)
 
     # Download models
-    if download_models(assets_dir):
+    if download_models(assets_dir, force=force):
         logger.info("=" * 50)
         logger.info("Download completed successfully!")
         logger.info(f"Assets are available at: {assets_dir.absolute()}")

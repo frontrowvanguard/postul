@@ -18,7 +18,7 @@ export const API_CONFIG = {
     ? Platform.OS === 'android'
       ? 'http://10.0.2.2:8000' // Android emulator
       : 'http://localhost:8000' // iOS simulator or web
-    : 'https://postul.onrender.com', // Production server (works on physical devices)
+    : 'http://localhost:8000', // Production server (works on physical devices)
 };
 
 export const getApiUrl = () => {

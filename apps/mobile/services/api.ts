@@ -76,6 +76,19 @@ export interface TikiTakaResponse {
   conversation_history: TikiTakaMessage[];
 }
 
+export interface TTSRequest {
+  text: string;
+  inference_steps?: number;
+  style_id?: number;
+  sample_rate?: number;
+}
+
+export interface TTSResponse {
+  audio_base64: string;
+  text: string;
+  sample_rate: number;
+}
+
 class ApiService {
   private baseUrl: string;
 
@@ -168,6 +181,34 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  }
+
+  async synthesizeSpeech(data: TTSRequest): Promise<TTSResponse> {
+    return this.request<TTSResponse>('/api/v1/tts/synthesize', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getSpeechAudio(text: string, inferenceSteps: number = 2, styleId: number = 0): Promise<Blob> {
+    const encodedText = encodeURIComponent(text);
+    const url = `${this.baseUrl}/api/v1/tts/audio/${encodedText}?inference_steps=${inferenceSteps}&style_id=${styleId}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.detail || errorData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.blob();
   }
 }
 
