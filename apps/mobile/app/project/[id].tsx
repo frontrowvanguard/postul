@@ -14,6 +14,7 @@ import {
     StatusBar,
     StyleSheet,
     Text,
+    TextInput,
     View,
 } from 'react-native';
 import Animated, {
@@ -74,6 +75,9 @@ export default function ProjectDetailScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [summaryExpanded, setSummaryExpanded] = useState(false);
     const [conversationMode] = useState<'single-turn' | 'tiki-taka'>('single-turn');
+    const [inputMode, setInputMode] = useState<'voice' | 'text'>('voice');
+    const [textInput, setTextInput] = useState('');
+    const [isTextInputVisible, setIsTextInputVisible] = useState(false);
 
     const loadProjectData = useCallback(async () => {
         if (!id) return;
@@ -113,6 +117,23 @@ export default function ProjectDetailScreen() {
             hour: '2-digit',
             minute: '2-digit',
         });
+    };
+
+    const handleTextSubmission = async (text: string) => {
+        if (!text.trim() || !project) return;
+
+        try {
+            // TODO: Implement text submission logic
+            // This could be used to:
+            // 1. Send a message/query related to the project
+            // 2. Create a new idea based on the text input
+            // 3. Update the project with new information
+            console.log('Text submitted for project:', project.id, text);
+            Alert.alert('Message sent', 'Your message has been submitted.');
+        } catch (error: any) {
+            console.error('Error submitting text:', error);
+            Alert.alert('Error', error.message || 'Failed to submit message.');
+        }
     };
 
     if (isLoading) {
@@ -429,9 +450,70 @@ export default function ProjectDetailScreen() {
                     </Animated.View>
                 </ScrollView>
 
+                {/* Text Input Modal - Shown when in text mode */}
+                {isTextInputVisible && (
+                    <Pressable
+                        style={styles.textInputOverlay}
+                        onPress={() => {
+                            setIsTextInputVisible(false);
+                            setTextInput('');
+                            if (Platform.OS === 'ios') {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }
+                        }}>
+                        <Pressable
+                            onPress={(e) => e.stopPropagation()}
+                            style={styles.textInputCardContainer}>
+                            <LiquidGlassView style={styles.textInputCard} interactive effect="clear">
+                                <View style={styles.textInputHeader}>
+                                    <Text style={styles.textInputTitle}>Enter your message</Text>
+                                    <Pressable
+                                        onPress={() => {
+                                            setIsTextInputVisible(false);
+                                            setTextInput('');
+                                            if (Platform.OS === 'ios') {
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            }
+                                        }}>
+                                        <Ionicons name="close" size={24} color="#fff" />
+                                    </Pressable>
+                                </View>
+                                <TextInput
+                                    style={styles.textInput}
+                                    value={textInput}
+                                    onChangeText={setTextInput}
+                                    placeholder="Type your message here..."
+                                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                                    multiline
+                                    autoFocus
+                                    textAlignVertical="top"
+                                />
+                                <View style={styles.textInputActions}>
+                                    <Pressable
+                                        style={[styles.textInputButton, !textInput.trim() && styles.textInputButtonDisabled]}
+                                        onPress={() => {
+                                            if (!textInput.trim()) return;
+                                            setIsTextInputVisible(false);
+                                            const inputText = textInput.trim();
+                                            setTextInput('');
+                                            if (Platform.OS === 'ios') {
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                            }
+                                            handleTextSubmission(inputText);
+                                        }}
+                                        disabled={!textInput.trim()}>
+                                        <Text style={styles.textInputButtonText}>Send</Text>
+                                    </Pressable>
+                                </View>
+                            </LiquidGlassView>
+                        </Pressable>
+                    </Pressable>
+                )}
+
                 {/* Bottom Navigation */}
                 <BottomNavigation
                     conversationMode={conversationMode}
+                    inputMode={inputMode}
                     onModeSwitchPress={() => {
                         // TODO: Open mode selection sheet
                         console.log('Mode switch pressed');
@@ -440,7 +522,26 @@ export default function ProjectDetailScreen() {
                         if (Platform.OS === 'ios') {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                         }
-                        // TODO: Handle record action
+                        if (inputMode === 'text') {
+                            // Toggle text input visibility
+                            setIsTextInputVisible(!isTextInputVisible);
+                        } else {
+                            // TODO: Handle voice record action
+                        }
+                    }}
+                    onKeypadPress={() => {
+                        if (Platform.OS === 'ios') {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                        // Toggle between voice and text mode
+                        const newMode = inputMode === 'voice' ? 'text' : 'voice';
+                        setInputMode(newMode);
+                        if (newMode === 'text') {
+                            setIsTextInputVisible(true);
+                        } else {
+                            setIsTextInputVisible(false);
+                            setTextInput('');
+                        }
                     }}
                 />
             </LinearGradient>
@@ -743,6 +844,85 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 16,
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    textInputOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+        zIndex: 1000,
+    },
+    textInputCardContainer: {
+        width: '100%',
+    },
+    textInputCard: {
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        backgroundColor: '#26262640',
+        borderColor: 'rgba(255, 255, 255, 0.8)',
+        borderWidth: 1,
+        paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: -4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 16,
+            },
+            android: {
+                elevation: 16,
+            },
+        }),
+    },
+    textInputHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 16,
+    },
+    textInputTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#fff',
+        fontFamily: defaultFontFamily,
+    },
+    textInput: {
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 12,
+        padding: 16,
+        marginHorizontal: 20,
+        marginBottom: 16,
+        minHeight: 120,
+        maxHeight: 200,
+        color: '#fff',
+        fontSize: 16,
+        fontFamily: defaultFontFamily,
+    },
+    textInputActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        paddingHorizontal: 20,
+    },
+    textInputButton: {
+        backgroundColor: '#A8E6CF',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 20,
+    },
+    textInputButtonDisabled: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        opacity: 0.5,
+    },
+    textInputButtonText: {
+        color: '#000',
+        fontSize: 16,
+        fontWeight: '600',
+        fontFamily: defaultFontFamily,
     },
 });
 

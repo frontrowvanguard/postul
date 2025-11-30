@@ -31,6 +31,8 @@ export default function HomeScreen() {
   const [tikiTakaHistory, setTikiTakaHistory] = useState<TikiTakaMessage[]>([]);
   const [initialIdeaContext, setInitialIdeaContext] = useState<string | null>(null);
   const [isWaitingForAdvisor, setIsWaitingForAdvisor] = useState(false);
+  const [inputMode, setInputMode] = useState<'voice' | 'text'>('voice');
+  const [textInput, setTextInput] = useState('');
   const tikiTakaScrollViewRef = useRef<ScrollView>(null);
   const previousHistoryLengthRef = useRef<number>(0);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -465,6 +467,44 @@ export default function HomeScreen() {
     }
   };
 
+  const handleTextSubmit = async () => {
+    if (!textInput.trim() || isAnalyzing || isWaitingForAdvisor) {
+      return;
+    }
+
+    const inputText = textInput.trim();
+    // Don't clear input immediately - keep it visible during loading
+    // setTextInput(''); // Clear input immediately
+
+    try {
+      if (conversationMode === 'tiki-taka') {
+        await handleTikiTakaConversation(inputText);
+      } else {
+        await analyzeIdea(inputText);
+      }
+      // Clear input after successful submission
+      setTextInput('');
+    } catch (error: any) {
+      console.error('Error submitting text:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to submit message. Please try again.',
+      );
+      // Don't clear input on error so user can retry
+    }
+  };
+
+  const handleToggleInputMode = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const newMode = inputMode === 'voice' ? 'text' : 'voice';
+    setInputMode(newMode);
+    if (newMode === 'voice') {
+      setTextInput(''); // Clear text input when switching back to voice
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
@@ -706,14 +746,19 @@ export default function HomeScreen() {
         {/* Bottom Navigation */}
         <BottomNavigation
           conversationMode={conversationMode}
+          inputMode={inputMode}
+          textInputValue={textInput}
+          onTextInputChange={setTextInput}
+          onTextSubmit={handleTextSubmit}
           onModeSwitchPress={() => setIsModeSheetVisible(true)}
-          onRecordPress={handleToggleRecord}
+          onRecordPress={inputMode === 'voice' ? handleToggleRecord : undefined}
+          onKeypadPress={handleToggleInputMode}
           onListPress={() => setIsSidepanelVisible(true)}
           onSubmitPress={submitTikiTakaConversation}
           isRecording={isRecording}
           isAnalyzing={isAnalyzing || isWaitingForAdvisor}
           disabled={isAnalyzing || isWaitingForAdvisor}
-          showSubmitButton={conversationMode === 'tiki-taka' && tikiTakaHistory.length > 0}
+          showSubmitButton={conversationMode === 'tiki-taka' && tikiTakaHistory.length > 0 && inputMode === 'voice'}
         />
 
         {/* Conversation List Sidepanel */}
