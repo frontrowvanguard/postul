@@ -334,7 +334,7 @@ export default function ProjectDetailScreen() {
                                             }
                                             router.push(`/project/${id}/survey-post` as any);
                                         }}>
-                                        <LiquidGlassView style={styles.actionAgentButtonInner} interactive effect="clear">
+                                        <LiquidGlassView style={styles.actionAgentButtonInner} interactive >
                                             <Ionicons name="logo-twitter" size={28} color="#ffffff" style={{ alignSelf: 'flex-start' }} />
                                             <Text style={[styles.actionAgentText, { fontWeight: '700', color: '#fff', paddingTop: 30, paddingLeft: 5 }]}>
                                                 Create a survey post
@@ -353,9 +353,11 @@ export default function ProjectDetailScreen() {
                                                 if (Platform.OS === 'ios') {
                                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                                                 }
+
+                                                Alert.alert('Coming soon', 'This feature is coming soon');
                                             }}>
-                                            <LiquidGlassView style={styles.actionAgentButtonInner} interactive effect="clear">
-                                                <Text style={styles.actionAgentText}>{label}</Text>
+                                            <LiquidGlassView style={[styles.actionAgentButtonInner, { backgroundColor: '#D1D5DB', opacity: 0.4 }]} interactive={false} effect="none">
+                                                <Text style={[styles.actionAgentText, { color: '#A1A1AA' }]}>{label}</Text>
                                             </LiquidGlassView>
                                         </AnimatedButton>
                                     ))}
@@ -643,6 +645,14 @@ const styles = StyleSheet.create({
     },
     actionAgentButtonWithIcon: {
         minHeight: 90,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.08,
+                shadowRadius: 16,
+            },
+        }),
     },
     actionAgentButtonInner: {
         padding: 12,

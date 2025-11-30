@@ -135,10 +135,10 @@ Be constructive, specific, and actionable in your feedback."""
         )
 
     async def tiki_taka_conversation(
-        self, 
-        transcribed_text: str, 
+        self,
+        transcribed_text: str,
         conversation_history: list[Dict[str, str]] = None,
-        idea_context: str = None
+        idea_context: str = None,
     ) -> str:
         """
         Generate an advisor response for tiki-taka conversation mode.
@@ -154,7 +154,7 @@ Be constructive, specific, and actionable in your feedback."""
         """
         # Build conversation messages
         messages = []
-        
+
         # System prompt for advisor role
         system_prompt = """You are a thoughtful startup advisor and innovation consultant. Your role is to help users think through their startup ideas through Socratic questioning and gentle guidance.
 
@@ -169,35 +169,35 @@ Key principles:
 - If they're stuck, offer gentle prompts or suggest areas to consider
 
 Your goal is to help users think critically about their idea, not to analyze it for them."""
-        
+
         messages.append({"role": "system", "content": system_prompt})
-        
+
         # Add initial idea context if this is the start of a conversation
-        if idea_context and (not conversation_history or len(conversation_history) == 0):
-            messages.append({
-                "role": "user", 
-                "content": f"I have an idea: {idea_context}"
-            })
+        if idea_context and (
+            not conversation_history or len(conversation_history) == 0
+        ):
+            messages.append(
+                {"role": "user", "content": f"I have an idea: {idea_context}"}
+            )
             # Add a first advisor response if we have context
             if conversation_history is None:
                 conversation_history = []
-        
+
         # Add conversation history
         if conversation_history:
             for msg in conversation_history:
                 # Ensure we have the right format
                 if isinstance(msg, dict):
-                    messages.append({
-                        "role": msg.get("role", "user"),
-                        "content": msg.get("content", "")
-                    })
-        
+                    messages.append(
+                        {
+                            "role": msg.get("role", "user"),
+                            "content": msg.get("content", ""),
+                        }
+                    )
+
         # Add current user message
-        messages.append({
-            "role": "user",
-            "content": transcribed_text
-        })
-        
+        messages.append({"role": "user", "content": transcribed_text})
+
         try:
             # Use chat completion API for conversation
             response = await self.client.chat.completions.create(
@@ -206,11 +206,13 @@ Your goal is to help users think critically about their idea, not to analyze it 
                 temperature=0.8,  # Slightly higher for more natural conversation
                 max_tokens=300,  # Keep responses concise
             )
-            
+
             advisor_message = response.choices[0].message.content.strip()
-            logger.info(f"Generated tiki-taka advisor response (length: {len(advisor_message)})")
+            logger.info(
+                f"Generated tiki-taka advisor response (length: {len(advisor_message)})"
+            )
             return advisor_message
-            
+
         except Exception as e:
             logger.error(f"Error generating tiki-taka conversation: {e}", exc_info=True)
             # Return a fallback response
@@ -281,7 +283,6 @@ The description should be:
             # Parse the structured response from JSON
             return response.output_parsed
 
-
         except Exception as e:
             logger.error(f"Error generating project details: {e}", exc_info=True)
             # Fallback
@@ -291,10 +292,7 @@ The description should be:
             }
 
     async def generate_survey_posts(
-        self,
-        idea_context: str,
-        platform: Optional[str] = None,
-        count: int = 3
+        self, idea_context: str, platform: Optional[str] = None, count: int = 3
     ) -> List[Dict[str, str]]:
         """
         Generate survey post messages for social media platforms (X/Twitter or Threads).
@@ -312,41 +310,44 @@ The description should be:
 
         class PollOption(BaseModel):
             """Poll option model for structured output."""
+
             text: str = Field(
                 ...,
                 min_length=1,
                 max_length=25,
-                description="Poll option text (keep it concise, max 25 characters)"
+                description="Poll option text (keep it concise, max 25 characters)",
             )
 
         class SurveyPost(BaseModel):
             """Single survey post message model with poll options for structured output."""
+
             text: str = Field(
                 ...,
                 min_length=10,
                 max_length=500,
-                description="Engaging survey post text/question that encourages interaction"
+                description="Engaging survey post text/question that encourages interaction",
             )
             poll_options: List[PollOption] = Field(
                 ...,
                 min_length=2,
                 max_length=4,
-                description="Poll options (2-4 options, each max 25 characters)"
+                description="Poll options (2-4 options, each max 25 characters)",
             )
 
         class SurveyPostsResponse(BaseModel):
             """Response model containing multiple survey posts."""
+
             posts: List[SurveyPost] = Field(
                 ...,
                 min_length=1,
                 max_length=10,
-                description="List of survey post messages with poll options"
+                description="List of survey post messages with poll options",
             )
 
         # Build platform-specific instructions
         platform_instructions = ""
         char_limit = 280  # Default to X/Twitter limit
-        
+
         if platform == "x":
             platform_instructions = """
 - Optimize for X (Twitter) format: concise, punchy, engaging
@@ -432,17 +433,23 @@ Generate {count} unique, engaging survey posts with creative, context-aware poll
 
             # Extract posts from structured response
             posts_response = response.output_parsed
-            
+
             # Convert to list of dicts with IDs and poll options
             messages = []
             for idx, post in enumerate(posts_response.posts, start=1):
-                messages.append({
-                    "id": str(idx),
-                    "text": post.text,
-                    "poll_options": [{"text": option.text} for option in post.poll_options]
-                })
+                messages.append(
+                    {
+                        "id": str(idx),
+                        "text": post.text,
+                        "poll_options": [
+                            {"text": option.text} for option in post.poll_options
+                        ],
+                    }
+                )
 
-            logger.info(f"Successfully generated {len(messages)} survey posts for platform: {platform or 'generic'}")
+            logger.info(
+                f"Successfully generated {len(messages)} survey posts for platform: {platform or 'generic'}"
+            )
             return messages
 
         except Exception as e:
@@ -450,55 +457,104 @@ Generate {count} unique, engaging survey posts with creative, context-aware poll
             # Return fallback posts
             return self._get_fallback_survey_posts(idea_context, count)
 
-    def _get_fallback_survey_posts(self, idea_context: str, count: int) -> List[Dict[str, Any]]:
+    def _get_fallback_survey_posts(
+        self, idea_context: str, count: int
+    ) -> List[Dict[str, Any]]:
         """Return fallback survey posts when AI service fails."""
         # Extract keywords from idea context to generate more relevant options
-        idea_preview = idea_context[:100] + "..." if len(idea_context) > 100 else idea_context
-        
+        idea_preview = (
+            idea_context[:100] + "..." if len(idea_context) > 100 else idea_context
+        )
+
         # Generate context-aware poll options based on idea keywords
         def get_contextual_options(context: str) -> List[Dict[str, str]]:
             """Generate poll options based on idea context."""
             context_lower = context.lower()
-            
+
             # Education/learning related
-            if any(word in context_lower for word in ['education', 'learn', 'course', 'teach', 'student', 'school', 'college', 'university']):
+            if any(
+                word in context_lower
+                for word in [
+                    "education",
+                    "learn",
+                    "course",
+                    "teach",
+                    "student",
+                    "school",
+                    "college",
+                    "university",
+                ]
+            ):
                 return [
                     {"text": "I'd use this! 📚"},
                     {"text": "Need more info"},
                     {"text": "Not for me"},
-                    {"text": "Tell me more"}
+                    {"text": "Tell me more"},
                 ]
             # Product/service related
-            elif any(word in context_lower for word in ['product', 'service', 'app', 'platform', 'tool', 'software']):
+            elif any(
+                word in context_lower
+                for word in [
+                    "product",
+                    "service",
+                    "app",
+                    "platform",
+                    "tool",
+                    "software",
+                ]
+            ):
                 return [
                     {"text": "Sign me up! 🚀"},
                     {"text": "Free version only"},
                     {"text": "Not interested"},
-                    {"text": "Sounds cool"}
+                    {"text": "Sounds cool"},
                 ]
             # Business/startup related
-            elif any(word in context_lower for word in ['business', 'startup', 'company', 'entrepreneur', 'market']):
+            elif any(
+                word in context_lower
+                for word in ["business", "startup", "company", "entrepreneur", "market"]
+            ):
                 return [
                     {"text": "I'd invest 💰"},
                     {"text": "Maybe later"},
                     {"text": "Not my thing"},
-                    {"text": "Interesting idea"}
+                    {"text": "Interesting idea"},
                 ]
             # Health/wellness related
-            elif any(word in context_lower for word in ['health', 'fitness', 'wellness', 'exercise', 'diet', 'medical']):
+            elif any(
+                word in context_lower
+                for word in [
+                    "health",
+                    "fitness",
+                    "wellness",
+                    "exercise",
+                    "diet",
+                    "medical",
+                ]
+            ):
                 return [
                     {"text": "I need this! 💪"},
                     {"text": "Would try it"},
                     {"text": "Not for me"},
-                    {"text": "Tell me more"}
+                    {"text": "Tell me more"},
                 ]
             # Tech/innovation related
-            elif any(word in context_lower for word in ['tech', 'ai', 'technology', 'innovation', 'digital', 'online']):
+            elif any(
+                word in context_lower
+                for word in [
+                    "tech",
+                    "ai",
+                    "technology",
+                    "innovation",
+                    "digital",
+                    "online",
+                ]
+            ):
                 return [
                     {"text": "Count me in! ⚡"},
                     {"text": "Need to see more"},
                     {"text": "Not interested"},
-                    {"text": "Sounds promising"}
+                    {"text": "Sounds promising"},
                 ]
             # Default creative options
             else:
@@ -506,41 +562,44 @@ Generate {count} unique, engaging survey posts with creative, context-aware poll
                     {"text": "I'm in! 🎯"},
                     {"text": "Maybe later"},
                     {"text": "Not my thing"},
-                    {"text": "Tell me more"}
+                    {"text": "Tell me more"},
                 ]
-        
+
         contextual_options = get_contextual_options(idea_context)
-        
+
         fallback_posts = [
             {
                 "id": "1",
                 "text": f"What do you think about {idea_preview}? Would love your thoughts! 🚀",
-                "poll_options": contextual_options[:2] if len(contextual_options) >= 2 else [
-                    {"text": "I'm in! 🎯"},
-                    {"text": "Not for me"}
-                ]
+                "poll_options": contextual_options[:2]
+                if len(contextual_options) >= 2
+                else [{"text": "I'm in! 🎯"}, {"text": "Not for me"}],
             },
             {
                 "id": "2",
                 "text": f"I'm exploring {idea_preview}... What's your take? 💭",
-                "poll_options": contextual_options[:3] if len(contextual_options) >= 3 else [
+                "poll_options": contextual_options[:3]
+                if len(contextual_options) >= 3
+                else [
                     {"text": "Very interested"},
                     {"text": "Need more info"},
-                    {"text": "Not interested"}
-                ]
+                    {"text": "Not interested"},
+                ],
             },
             {
                 "id": "3",
                 "text": f"Quick poll: {idea_preview}... Thoughts? 🤔",
-                "poll_options": contextual_options[:4] if len(contextual_options) >= 4 else [
+                "poll_options": contextual_options[:4]
+                if len(contextual_options) >= 4
+                else [
                     {"text": "Yes, please!"},
                     {"text": "Maybe later"},
                     {"text": "Not my thing"},
-                    {"text": "Tell me more"}
-                ]
-            }
+                    {"text": "Tell me more"},
+                ],
+            },
         ]
-        
+
         return fallback_posts[:count]
 
 
