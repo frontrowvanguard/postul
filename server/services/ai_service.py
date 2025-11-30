@@ -1,7 +1,6 @@
 from openai import AsyncOpenAI
 from typing import Dict, Any, List, Optional
 import logging
-import json
 
 from config import settings
 from schema import ExtendedIdeaAnalysis
@@ -311,13 +310,28 @@ The description should be:
         """
         from pydantic import BaseModel, Field
 
+        class PollOption(BaseModel):
+            """Poll option model for structured output."""
+            text: str = Field(
+                ...,
+                min_length=1,
+                max_length=25,
+                description="Poll option text (keep it concise, max 25 characters)"
+            )
+
         class SurveyPost(BaseModel):
-            """Single survey post message model for structured output."""
+            """Single survey post message model with poll options for structured output."""
             text: str = Field(
                 ...,
                 min_length=10,
                 max_length=500,
-                description="Engaging survey post text that encourages interaction"
+                description="Engaging survey post text/question that encourages interaction"
+            )
+            poll_options: List[PollOption] = Field(
+                ...,
+                min_length=2,
+                max_length=4,
+                description="Poll options (2-4 options, each max 25 characters)"
             )
 
         class SurveyPostsResponse(BaseModel):
@@ -326,7 +340,7 @@ The description should be:
                 ...,
                 min_length=1,
                 max_length=10,
-                description="List of survey post messages"
+                description="List of survey post messages with poll options"
             )
 
         # Build platform-specific instructions
@@ -372,14 +386,28 @@ Idea Context:
 Requirements for each post:
 1. Should be engaging and encourage interaction (likes, replies, shares)
 2. Should relate to the idea and invite audience feedback
-3. Should be formatted as a question or poll-style post
+3. Should be formatted as a question that works well with a poll
 4. Should be concise and within {char_limit} characters
 5. Should use appropriate emojis (1-3 per post)
 6. Should be professional yet conversational
 7. Each post should have a slightly different angle or focus
-8. Should encourage people to share their thoughts or vote/respond
+8. Should encourage people to vote in the poll
 
-Generate {count} unique, engaging survey posts that will help validate this startup idea through social media engagement."""
+CRITICAL: Each post MUST include exactly 2-4 poll options. The poll options should:
+- Be concise (max 25 characters each)
+- Be mutually exclusive choices that represent different perspectives, use cases, or opinions
+- Be creative, specific, and contextually relevant to the idea - avoid generic "Yes/No" options
+- Use emojis strategically (1 per option max) to make them more engaging
+- Cover different angles: user personas, use cases, pain points, preferences, or validation aspects
+- Be action-oriented or opinion-based when possible
+- Examples of good options:
+  * For education ideas: "Already using it", "Would try it", "Not for me", "Need more info"
+  * For product ideas: "I'd pay for this", "Free version only", "Not interested", "Tell me more"
+  * For service ideas: "Sign me up!", "Maybe later", "Not my thing", "Sounds interesting"
+- Make each option distinct and meaningful - they should help validate different aspects of the idea
+- Think about what would be most valuable to learn from the poll results
+
+Generate {count} unique, engaging survey posts with creative, context-aware poll options that will help validate this startup idea through social media engagement."""
 
         try:
             # Use Responses API with structured outputs
@@ -391,7 +419,10 @@ Generate {count} unique, engaging survey posts that will help validate this star
                         "content": "You are an expert social media content creator specializing in engaging survey posts and polls. "
                         "You create posts that encourage interaction, discussion, and feedback. "
                         "Your posts are concise, engaging, and optimized for social media platforms. "
-                        "You understand how to craft questions that invite meaningful responses and engagement.",
+                        "You understand how to craft questions that invite meaningful responses and engagement. "
+                        "You excel at creating creative, context-aware poll options that go beyond simple Yes/No choices. "
+                        "Your poll options are specific, diverse, and help validate different aspects of startup ideas. "
+                        "You think about user personas, use cases, pain points, and validation angles when crafting options.",
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -402,12 +433,13 @@ Generate {count} unique, engaging survey posts that will help validate this star
             # Extract posts from structured response
             posts_response = response.output_parsed
             
-            # Convert to list of dicts with IDs
+            # Convert to list of dicts with IDs and poll options
             messages = []
             for idx, post in enumerate(posts_response.posts, start=1):
                 messages.append({
                     "id": str(idx),
-                    "text": post.text
+                    "text": post.text,
+                    "poll_options": [{"text": option.text} for option in post.poll_options]
                 })
 
             logger.info(f"Successfully generated {len(messages)} survey posts for platform: {platform or 'generic'}")
@@ -418,23 +450,94 @@ Generate {count} unique, engaging survey posts that will help validate this star
             # Return fallback posts
             return self._get_fallback_survey_posts(idea_context, count)
 
-    def _get_fallback_survey_posts(self, idea_context: str, count: int) -> List[Dict[str, str]]:
+    def _get_fallback_survey_posts(self, idea_context: str, count: int) -> List[Dict[str, Any]]:
         """Return fallback survey posts when AI service fails."""
-        # Create simple fallback posts based on idea context
+        # Extract keywords from idea context to generate more relevant options
         idea_preview = idea_context[:100] + "..." if len(idea_context) > 100 else idea_context
+        
+        # Generate context-aware poll options based on idea keywords
+        def get_contextual_options(context: str) -> List[Dict[str, str]]:
+            """Generate poll options based on idea context."""
+            context_lower = context.lower()
+            
+            # Education/learning related
+            if any(word in context_lower for word in ['education', 'learn', 'course', 'teach', 'student', 'school', 'college', 'university']):
+                return [
+                    {"text": "I'd use this! 📚"},
+                    {"text": "Need more info"},
+                    {"text": "Not for me"},
+                    {"text": "Tell me more"}
+                ]
+            # Product/service related
+            elif any(word in context_lower for word in ['product', 'service', 'app', 'platform', 'tool', 'software']):
+                return [
+                    {"text": "Sign me up! 🚀"},
+                    {"text": "Free version only"},
+                    {"text": "Not interested"},
+                    {"text": "Sounds cool"}
+                ]
+            # Business/startup related
+            elif any(word in context_lower for word in ['business', 'startup', 'company', 'entrepreneur', 'market']):
+                return [
+                    {"text": "I'd invest 💰"},
+                    {"text": "Maybe later"},
+                    {"text": "Not my thing"},
+                    {"text": "Interesting idea"}
+                ]
+            # Health/wellness related
+            elif any(word in context_lower for word in ['health', 'fitness', 'wellness', 'exercise', 'diet', 'medical']):
+                return [
+                    {"text": "I need this! 💪"},
+                    {"text": "Would try it"},
+                    {"text": "Not for me"},
+                    {"text": "Tell me more"}
+                ]
+            # Tech/innovation related
+            elif any(word in context_lower for word in ['tech', 'ai', 'technology', 'innovation', 'digital', 'online']):
+                return [
+                    {"text": "Count me in! ⚡"},
+                    {"text": "Need to see more"},
+                    {"text": "Not interested"},
+                    {"text": "Sounds promising"}
+                ]
+            # Default creative options
+            else:
+                return [
+                    {"text": "I'm in! 🎯"},
+                    {"text": "Maybe later"},
+                    {"text": "Not my thing"},
+                    {"text": "Tell me more"}
+                ]
+        
+        contextual_options = get_contextual_options(idea_context)
         
         fallback_posts = [
             {
                 "id": "1",
-                "text": f"What do you think about {idea_preview}? Would love your thoughts! 🚀"
+                "text": f"What do you think about {idea_preview}? Would love your thoughts! 🚀",
+                "poll_options": contextual_options[:2] if len(contextual_options) >= 2 else [
+                    {"text": "I'm in! 🎯"},
+                    {"text": "Not for me"}
+                ]
             },
             {
                 "id": "2",
-                "text": f"I'm exploring {idea_preview}... What's your take? 💭"
+                "text": f"I'm exploring {idea_preview}... What's your take? 💭",
+                "poll_options": contextual_options[:3] if len(contextual_options) >= 3 else [
+                    {"text": "Very interested"},
+                    {"text": "Need more info"},
+                    {"text": "Not interested"}
+                ]
             },
             {
                 "id": "3",
-                "text": f"Quick poll: {idea_preview}... Thoughts? 🤔"
+                "text": f"Quick poll: {idea_preview}... Thoughts? 🤔",
+                "poll_options": contextual_options[:4] if len(contextual_options) >= 4 else [
+                    {"text": "Yes, please!"},
+                    {"text": "Maybe later"},
+                    {"text": "Not my thing"},
+                    {"text": "Tell me more"}
+                ]
             }
         ]
         

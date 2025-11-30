@@ -59,6 +59,14 @@ export default function RootLayout() {
             animationDuration: 300,
           }}
         />
+        <Stack.Screen
+          name="project/[id]/survey-post"
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+            animationDuration: 300,
+          }}
+        />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />

@@ -1,24 +1,36 @@
 import { LiquidGlassView } from '@callstack/liquid-glass';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { defaultFontFamily } from '@/constants/theme';
 import { SocialPlatform } from '@/app/project/[id]/survey-post';
 
 interface PostPreviewProps {
     text: string;
+    pollOptions: { text: string }[];
     platform: SocialPlatform;
 }
 
-export function PostPreview({ text, platform }: PostPreviewProps) {
+export function PostPreview({ text, pollOptions, platform }: PostPreviewProps) {
     if (platform === 'x') {
-        return <XPreview text={text} />;
+        return <XPreview text={text} pollOptions={pollOptions} />;
     } else {
-        return <ThreadsPreview text={text} />;
+        return <ThreadsPreview text={text} pollOptions={pollOptions} />;
     }
 }
 
-function XPreview({ text }: { text: string }) {
+function XPreview({ text, pollOptions }: { text: string; pollOptions: { text: string }[] }) {
+    // Calculate mock percentages for preview (distributed evenly)
+    const totalVotes = 1000;
+    const votesPerOption = Math.floor(totalVotes / pollOptions.length);
+    const percentages = pollOptions.map((_, index) => {
+        if (index === pollOptions.length - 1) {
+            // Last option gets remainder
+            return 100 - (votesPerOption * (pollOptions.length - 1) * 100) / totalVotes;
+        }
+        return (votesPerOption * 100) / totalVotes;
+    });
+
     return (
         <View style={styles.container}>
             <LiquidGlassView style={styles.card} interactive effect="clear">
@@ -37,6 +49,31 @@ function XPreview({ text }: { text: string }) {
                         {/* X/Twitter-like content */}
                         <View style={styles.xContent}>
                             <Text style={styles.xText}>{text}</Text>
+                        </View>
+                        {/* Poll Options */}
+                        <View style={styles.pollContainer}>
+                            {pollOptions.map((option, index) => (
+                                <Pressable key={index} style={styles.pollOption}>
+                                    <View style={styles.pollOptionContent}>
+                                        <View style={styles.pollBarContainer}>
+                                            <View
+                                                style={[
+                                                    styles.pollBar,
+                                                    { width: `${percentages[index]}%` },
+                                                    index === 0 && styles.pollBarFirst,
+                                                ]}
+                                            />
+                                        </View>
+                                        <View style={styles.pollOptionTextContainer}>
+                                            <Text style={styles.pollOptionText}>{option.text || `Option ${index + 1}`}</Text>
+                                            <Text style={styles.pollPercentage}>
+                                                {percentages[index].toFixed(1)}%
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </Pressable>
+                            ))}
+                            <Text style={styles.pollVotes}>{totalVotes.toLocaleString()} votes</Text>
                         </View>
                         {/* X/Twitter-like footer */}
                         <View style={styles.xFooter}>
@@ -63,7 +100,16 @@ function XPreview({ text }: { text: string }) {
     );
 }
 
-function ThreadsPreview({ text }: { text: string }) {
+function ThreadsPreview({ text, pollOptions }: { text: string; pollOptions: { text: string }[] }) {
+    // Calculate mock percentages for preview
+    const totalVotes = 500;
+    const votesPerOption = Math.floor(totalVotes / pollOptions.length);
+    const percentages = pollOptions.map((_, index) => {
+        if (index === pollOptions.length - 1) {
+            return 100 - (votesPerOption * (pollOptions.length - 1) * 100) / totalVotes;
+        }
+        return (votesPerOption * 100) / totalVotes;
+    });
     return (
         <View style={styles.container}>
             <LiquidGlassView style={styles.card} interactive effect="clear">
@@ -82,6 +128,31 @@ function ThreadsPreview({ text }: { text: string }) {
                         {/* Threads-like content */}
                         <View style={styles.threadsContent}>
                             <Text style={styles.threadsText}>{text}</Text>
+                        </View>
+                        {/* Poll Options */}
+                        <View style={styles.pollContainer}>
+                            {pollOptions.map((option, index) => (
+                                <Pressable key={index} style={styles.pollOption}>
+                                    <View style={styles.pollOptionContent}>
+                                        <View style={styles.pollBarContainer}>
+                                            <View
+                                                style={[
+                                                    styles.pollBar,
+                                                    { width: `${percentages[index]}%` },
+                                                    index === 0 && styles.pollBarFirst,
+                                                ]}
+                                            />
+                                        </View>
+                                        <View style={styles.pollOptionTextContainer}>
+                                            <Text style={styles.pollOptionText}>{option.text || `Option ${index + 1}`}</Text>
+                                            <Text style={styles.pollPercentage}>
+                                                {percentages[index].toFixed(1)}%
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </Pressable>
+                            ))}
+                            <Text style={styles.pollVotes}>{totalVotes.toLocaleString()} votes</Text>
                         </View>
                         {/* Threads-like footer */}
                         <View style={styles.threadsFooter}>
@@ -238,6 +309,69 @@ const styles = StyleSheet.create({
         paddingTop: 12,
         borderTopWidth: 1,
         borderTopColor: '#E1E8ED',
+    },
+    // Poll styles
+    pollContainer: {
+        marginTop: 12,
+        marginBottom: 12,
+    },
+    pollOption: {
+        marginBottom: 8,
+        borderRadius: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#E1E8ED',
+    },
+    pollOptionContent: {
+        position: 'relative',
+        minHeight: 48,
+        justifyContent: 'center',
+    },
+    pollBarContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#F7F9FA',
+    },
+    pollBar: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        backgroundColor: '#1DA1F2',
+        opacity: 0.2,
+    },
+    pollBarFirst: {
+        backgroundColor: '#1DA1F2',
+    },
+    pollOptionTextContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 12,
+        zIndex: 1,
+    },
+    pollOptionText: {
+        fontSize: 15,
+        fontWeight: '500',
+        color: '#14171A',
+        flex: 1,
+        fontFamily: defaultFontFamily,
+    },
+    pollPercentage: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#14171A',
+        marginLeft: 12,
+        fontFamily: defaultFontFamily,
+    },
+    pollVotes: {
+        fontSize: 13,
+        color: '#657786',
+        marginTop: 8,
+        fontFamily: defaultFontFamily,
     },
 });
 

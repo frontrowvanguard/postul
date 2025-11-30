@@ -419,8 +419,13 @@ async def generate_survey_posts(
         )
         
         # Convert to response model
+        from schema import PollOption
         messages = [
-            SurveyPostMessage(id=post["id"], text=post["text"])
+            SurveyPostMessage(
+                id=post["id"],
+                text=post["text"],
+                poll_options=[PollOption(text=opt["text"]) for opt in post.get("poll_options", [])]
+            )
             for post in posts_data
         ]
         

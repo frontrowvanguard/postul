@@ -137,10 +137,16 @@ class TTSResponse(BaseModel):
     sample_rate: int = Field(..., description="Audio sample rate")
 
 
+class PollOption(BaseModel):
+    """Single poll option."""
+    text: str = Field(..., min_length=1, max_length=25, description="Poll option text (max 25 characters for X/Twitter)")
+
+
 class SurveyPostMessage(BaseModel):
-    """Single survey post message."""
+    """Single survey post message with poll options."""
     id: str = Field(..., description="Unique identifier for the post message")
     text: str = Field(..., min_length=1, max_length=500, description="Post message text")
+    poll_options: List[PollOption] = Field(..., min_length=2, max_length=4, description="Poll options (2-4 options)")
 
 
 class GenerateSurveyPostsRequest(BaseModel):

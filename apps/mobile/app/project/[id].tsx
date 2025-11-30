@@ -33,10 +33,12 @@ function AnimatedButton({
     children,
     style,
     onPress,
+    className,
 }: {
     children: React.ReactNode;
     style?: any;
     onPress?: () => void;
+    className?: string;
 }) {
     const scale = useSharedValue(1);
     const animatedStyle = useAnimatedStyle(() => ({
@@ -53,6 +55,7 @@ function AnimatedButton({
 
     return (
         <AnimatedPressable
+            className={className}
             style={[style, animatedStyle]}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
@@ -323,6 +326,21 @@ export default function ProjectDetailScreen() {
                                 {/* Action Agents */}
                                 <Text style={styles.sectionTitle}>Action Agents</Text>
                                 <View style={styles.actionAgentsContainer}>
+                                    <AnimatedButton
+                                        style={styles.actionAgentButtonWithIcon}
+                                        onPress={() => {
+                                            if (Platform.OS === 'ios') {
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                            }
+                                            router.push(`/project/${id}/survey-post` as any);
+                                        }}>
+                                        <LiquidGlassView style={styles.actionAgentButtonInner} interactive effect="clear">
+                                            <Ionicons name="logo-twitter" size={28} color="#ffffff" style={{ alignSelf: 'flex-start' }} />
+                                            <Text style={[styles.actionAgentText, { fontWeight: '700', color: '#fff', paddingTop: 30, paddingLeft: 5 }]}>
+                                                Create a survey post
+                                            </Text>
+                                        </LiquidGlassView>
+                                    </AnimatedButton>
                                     {[
                                         'Post Reddit at r/resumes',
                                         'Write a X post',
@@ -341,18 +359,6 @@ export default function ProjectDetailScreen() {
                                             </LiquidGlassView>
                                         </AnimatedButton>
                                     ))}
-                                    <AnimatedButton
-                                        style={styles.actionAgentButton}
-                                        onPress={() => {
-                                            if (Platform.OS === 'ios') {
-                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                            }
-                                            router.push(`/project/${id}/survey-post` as any);
-                                        }}>
-                                        <LiquidGlassView style={styles.actionAgentButtonInner} interactive effect="clear">
-                                            <Text style={styles.actionAgentText}>Create a survey post</Text>
-                                        </LiquidGlassView>
-                                    </AnimatedButton>
                                     <View style={styles.actionAgentButtonPlaceholder} />
                                 </View>
 
@@ -635,11 +641,16 @@ const styles = StyleSheet.create({
         flex: 1,
         minWidth: '45%',
     },
+    actionAgentButtonWithIcon: {
+        minHeight: 90,
+    },
     actionAgentButtonInner: {
         padding: 12,
         borderRadius: 16,
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
         alignItems: 'center',
+        justifyContent: 'center',
+        height: 100,
     },
     actionAgentText: {
         fontSize: 12,

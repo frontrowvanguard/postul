@@ -95,9 +95,14 @@ export interface GenerateSurveyPostsRequest {
   count?: number;
 }
 
+export interface PollOption {
+  text: string;
+}
+
 export interface SurveyPostMessage {
   id: string;
   text: string;
+  poll_options: PollOption[];
 }
 
 export interface GenerateSurveyPostsResponse {

@@ -18,9 +18,6 @@ import {
 } from 'react-native';
 import Animated, {
     FadeInDown,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
 } from 'react-native-reanimated';
 
 import { defaultFontFamily } from '@/constants/theme';
@@ -29,8 +26,6 @@ import { PlatformSwitcher } from '@/components/survey-post/platform-switcher';
 import { PostMessageList } from '@/components/survey-post/post-message-list';
 import { PostPreview } from '@/components/survey-post/post-preview';
 import { EditablePostInput } from '@/components/survey-post/editable-post-input';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export type SocialPlatform = 'x' | 'threads';
 
@@ -49,6 +44,7 @@ export default function SurveyPostScreen() {
     const [postMessages, setPostMessages] = useState<SurveyPostMessage[]>([]);
     const [selectedMessageIndex, setSelectedMessageIndex] = useState<number>(0);
     const [editingText, setEditingText] = useState<string>('');
+    const [editingPollOptions, setEditingPollOptions] = useState<{ text: string }[]>([]);
 
     const loadProjectData = useCallback(async () => {
         if (!id) return;
@@ -78,7 +74,7 @@ export default function SurveyPostScreen() {
 
         try {
             setIsGenerating(true);
-            
+
             // Try to use API endpoint, fallback to mock if not available
             try {
                 const response = await apiService.generateSurveyPosts({
@@ -86,37 +82,96 @@ export default function SurveyPostScreen() {
                     platform: selectedPlatform,
                     count: 3,
                 });
-                
+
                 if (response.messages && response.messages.length > 0) {
-                    setPostMessages(response.messages);
+                    // Ensure all messages have poll_options with at least 2 options
+                    const messagesWithPolls = response.messages.map((msg) => {
+                        if (!msg.poll_options || msg.poll_options.length < 2) {
+                            // Use creative fallback options
+                            return {
+                                ...msg,
+                                poll_options: [
+                                    { text: "I'm in! 🎯" },
+                                    { text: 'Maybe later' },
+                                    { text: 'Not my thing' },
+                                ],
+                            };
+                        }
+                        return msg;
+                    });
+                    
+                    setPostMessages(messagesWithPolls);
                     setSelectedMessageIndex(0);
-                    setEditingText(response.messages[0].text);
+                    setEditingText(messagesWithPolls[0].text);
+                    setEditingPollOptions(messagesWithPolls[0].poll_options);
                     return;
                 }
             } catch (apiError: any) {
                 // If API endpoint doesn't exist yet, use mock data
                 console.log('API endpoint not available, using mock data:', apiError.message);
             }
-            
+
+            // Generate context-aware fallback options based on idea content
+            const ideaText = (idea.analysis?.summary || idea.transcribed_text || '').toLowerCase();
+            const getContextualOptions = () => {
+                if (ideaText.includes('education') || ideaText.includes('learn') || ideaText.includes('course')) {
+                    return [
+                        { text: "I'd use this! 📚" },
+                        { text: 'Need more info' },
+                        { text: 'Not for me' },
+                    ];
+                } else if (ideaText.includes('product') || ideaText.includes('app') || ideaText.includes('platform')) {
+                    return [
+                        { text: "Sign me up! 🚀" },
+                        { text: 'Free version only' },
+                        { text: 'Not interested' },
+                    ];
+                } else if (ideaText.includes('business') || ideaText.includes('startup') || ideaText.includes('market')) {
+                    return [
+                        { text: "I'd invest 💰" },
+                        { text: 'Maybe later' },
+                        { text: 'Not my thing' },
+                    ];
+                } else if (ideaText.includes('health') || ideaText.includes('fitness') || ideaText.includes('wellness')) {
+                    return [
+                        { text: "I need this! 💪" },
+                        { text: 'Would try it' },
+                        { text: 'Not for me' },
+                    ];
+                } else {
+                    return [
+                        { text: "I'm in! 🎯" },
+                        { text: 'Maybe later' },
+                        { text: 'Tell me more' },
+                    ];
+                }
+            };
+
+            const contextualOptions = getContextualOptions();
+
             // Fallback to mock messages based on idea analysis
             const mockMessages: SurveyPostMessage[] = [
                 {
                     id: '1',
                     text: `What do you think about ${idea.analysis?.summary?.substring(0, 50) || idea.transcribed_text.substring(0, 50)}...? Would love your thoughts! 🚀`,
+                    poll_options: contextualOptions.slice(0, 2),
                 },
                 {
                     id: '2',
-                    text: `I'm exploring ${idea.analysis?.problem_statement?.substring(0, 60) || idea.transcribed_text.substring(0, 60)}... What's your take?`,
+                    text: `I'm exploring ${idea.analysis?.problem_statement?.substring(0, 60) || idea.transcribed_text.substring(0, 60)}... What's your take? 💭`,
+                    poll_options: contextualOptions.slice(0, 3),
                 },
                 {
                     id: '3',
-                    text: `Quick poll: ${idea.transcribed_text.substring(0, 100)}... Thoughts?`,
+                    text: `Quick poll: ${idea.transcribed_text.substring(0, 100)}... Thoughts? 🤔`,
+                    poll_options: contextualOptions,
                 },
             ];
 
             setPostMessages(mockMessages);
             setSelectedMessageIndex(0);
             setEditingText(mockMessages[0].text);
+            setEditingPollOptions(mockMessages[0].poll_options || []);
         } catch (error: any) {
             console.error('Error generating post messages:', error);
             Alert.alert('Error', error.message || 'Failed to generate post messages.');
@@ -137,7 +192,17 @@ export default function SurveyPostScreen() {
 
     const handleMessageSelect = (index: number) => {
         setSelectedMessageIndex(index);
-        setEditingText(postMessages[index].text);
+        const selectedMessage = postMessages[index];
+        setEditingText(selectedMessage.text);
+        // Ensure poll options exist, fallback to creative defaults if missing
+        const pollOptions = selectedMessage.poll_options && selectedMessage.poll_options.length >= 2
+            ? selectedMessage.poll_options
+            : [
+                { text: "I'm in! 🎯" },
+                { text: 'Maybe later' },
+                { text: 'Not my thing' },
+            ];
+        setEditingPollOptions(pollOptions);
         if (Platform.OS === 'ios') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
@@ -158,11 +223,16 @@ export default function SurveyPostScreen() {
         const newMessage: SurveyPostMessage = {
             id: `custom-${Date.now()}`,
             text: '',
+            poll_options: [
+                { text: '' },
+                { text: '' },
+            ],
             isCustom: true,
         };
         setPostMessages([...postMessages, newMessage]);
         setSelectedMessageIndex(postMessages.length);
         setEditingText('');
+        setEditingPollOptions(newMessage.poll_options);
         if (Platform.OS === 'ios') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
@@ -177,19 +247,19 @@ export default function SurveyPostScreen() {
 
         try {
             // Open the appropriate social media app
-            const platformUrl = selectedPlatform === 'x' 
+            const platformUrl = selectedPlatform === 'x'
                 ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(currentText)}`
                 : `https://threads.net/intent/post?text=${encodeURIComponent(currentText)}`;
-            
+
             const canOpen = await Linking.canOpenURL(platformUrl);
-            
+
             if (canOpen) {
                 await Linking.openURL(platformUrl);
-                
+
                 if (Platform.OS === 'ios') {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }
-                
+
                 // Navigate back after a short delay
                 setTimeout(() => {
                     router.back();
@@ -314,6 +384,16 @@ export default function SurveyPostScreen() {
                                     <EditablePostInput
                                         text={editingText}
                                         onChangeText={handleTextChange}
+                                        pollOptions={editingPollOptions}
+                                        onPollOptionsChange={(options) => {
+                                            setEditingPollOptions(options);
+                                            const updatedMessages = [...postMessages];
+                                            updatedMessages[selectedMessageIndex] = {
+                                                ...updatedMessages[selectedMessageIndex],
+                                                poll_options: options,
+                                            };
+                                            setPostMessages(updatedMessages);
+                                        }}
                                         platform={selectedPlatform}
                                     />
                                 </Animated.View>
@@ -324,6 +404,15 @@ export default function SurveyPostScreen() {
                                 <Animated.View entering={FadeInDown.delay(400).duration(400).springify()}>
                                     <PostPreview
                                         text={editingText}
+                                        pollOptions={
+                                            editingPollOptions.length >= 2
+                                                ? editingPollOptions
+                                                : [
+                                                      { text: "I'm in! 🎯" },
+                                                      { text: 'Maybe later' },
+                                                      { text: 'Not my thing' },
+                                                  ]
+                                        }
                                         platform={selectedPlatform}
                                     />
                                 </Animated.View>

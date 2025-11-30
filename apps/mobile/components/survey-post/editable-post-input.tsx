@@ -7,10 +7,12 @@ import { SocialPlatform } from '@/app/project/[id]/survey-post';
 interface EditablePostInputProps {
     text: string;
     onChangeText: (text: string) => void;
+    pollOptions: { text: string }[];
+    onPollOptionsChange: (options: { text: string }[]) => void;
     platform: SocialPlatform;
 }
 
-export function EditablePostInput({ text, onChangeText, platform }: EditablePostInputProps) {
+export function EditablePostInput({ text, onChangeText, pollOptions, onPollOptionsChange, platform }: EditablePostInputProps) {
     const maxLength = platform === 'x' ? 280 : 500; // X has 280 char limit, Threads has 500
     const charCount = text.length;
     const isNearLimit = charCount > maxLength * 0.8;
@@ -40,6 +42,24 @@ export function EditablePostInput({ text, onChangeText, platform }: EditablePost
                             {charCount} / {maxLength}
                         </Text>
                     </View>
+
+                    {/* Poll Options */}
+                    <Text style={styles.pollTitle}>Poll Options</Text>
+                    {pollOptions.map((option, index) => (
+                        <TextInput
+                            key={index}
+                            style={styles.pollInput}
+                            value={option.text}
+                            onChangeText={(newText) => {
+                                const updatedOptions = [...pollOptions];
+                                updatedOptions[index] = { text: newText };
+                                onPollOptionsChange(updatedOptions);
+                            }}
+                            placeholder={`Option ${index + 1}`}
+                            placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                            maxLength={25}
+                        />
+                    ))}
                 </View>
             </LiquidGlassView>
         </View>
@@ -102,6 +122,24 @@ const styles = StyleSheet.create({
     },
     charCountError: {
         color: '#FF6B9D',
+    },
+    pollTitle: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#fff',
+        marginTop: 20,
+        marginBottom: 12,
+        fontFamily: defaultFontFamily,
+    },
+    pollInput: {
+        height: 44,
+        fontSize: 14,
+        color: '#fff',
+        fontFamily: defaultFontFamily,
+        padding: 12,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        marginBottom: 8,
     },
 });
 
