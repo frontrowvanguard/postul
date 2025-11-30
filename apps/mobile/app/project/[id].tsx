@@ -25,6 +25,7 @@ import Animated, {
 import { defaultFontFamily } from '@/constants/theme';
 import { apiService, Idea, Project } from '@/services/api';
 import { BottomNavigation } from '@/components/bottom-navigation';
+import { SourceAvatar } from '@/components/source-avatar';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -72,7 +73,7 @@ export default function ProjectDetailScreen() {
     const [idea, setIdea] = useState<Idea | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [summaryExpanded, setSummaryExpanded] = useState(false);
-    const [conversationMode, setConversationMode] = useState<'single-turn' | 'tiki-taka'>('single-turn');
+    const [conversationMode] = useState<'single-turn' | 'tiki-taka'>('single-turn');
 
     const loadProjectData = useCallback(async () => {
         if (!id) return;
@@ -222,12 +223,25 @@ export default function ProjectDetailScreen() {
                                     </Pressable>
                                 )}
 
-                                {/* Placeholder Images */}
-                                <View style={styles.imagePlaceholders}>
-                                    <View style={styles.imagePlaceholder} />
-                                    <View style={styles.imagePlaceholder} />
-                                    <View style={styles.imagePlaceholder} />
-                                </View>
+                                {/* Source Images Carousel */}
+                                {analysis?.sources && analysis.sources.length > 0 ? (
+                                    <View style={styles.imageCarousel}>
+                                        {analysis.sources.slice(0, 3).map((source, index) => (
+                                            <SourceAvatar
+                                                key={index}
+                                                imageUrl={source.image_url}
+                                                title={source.title}
+                                                size={80}
+                                            />
+                                        ))}
+                                    </View>
+                                ) : (
+                                    <View style={styles.imagePlaceholders}>
+                                        <View style={styles.imagePlaceholder} />
+                                        <View style={styles.imagePlaceholder} />
+                                        <View style={styles.imagePlaceholder} />
+                                    </View>
+                                )}
 
                                 {/* Scores */}
                                 <View style={styles.scoresContainer}>
@@ -550,6 +564,11 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#A8E6CF',
         fontFamily: defaultFontFamily,
+    },
+    imageCarousel: {
+        flexDirection: 'row',
+        gap: 12,
+        marginVertical: 16,
     },
     imagePlaceholders: {
         flexDirection: 'row',

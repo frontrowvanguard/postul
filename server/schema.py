@@ -42,6 +42,7 @@ class Source(BaseModel):
     title: str = Field(..., description="Source title")
     url: str = Field(..., description="Source URL")
     checked: bool = Field(default=False, description="Whether the source has been reviewed")
+    image_url: Optional[str] = Field(None, description="Open Graph image URL for the source")
 
 
 class IdeaAnalysis(BaseModel):
@@ -127,7 +128,7 @@ class TTSRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=5000, description="Text to convert to speech")
     inference_steps: int = Field(default=2, ge=1, le=10, description="Number of inference steps (1-10)")
     style_id: int = Field(default=0, ge=0, description="Voice style ID")
-    speed: float = Field(default=1.05, ge=0.5, le=2.0, description="Speech speed multiplier")
+    speed: float = Field(default=1.15, ge=0.5, le=2.0, description="Speech speed multiplier")
 
 
 class TTSResponse(BaseModel):

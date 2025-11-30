@@ -1,9 +1,13 @@
 from openai import AsyncOpenAI
 from typing import Dict, Any, List, Optional
 import logging
+import asyncio
 
 from config import settings
-from schema import ExtendedIdeaAnalysis
+from schema import ExtendedIdeaAnalysis, Source
+from services.og_service import OGImageService
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +18,8 @@ class AIService:
     def __init__(self):
         self.client = AsyncOpenAI(api_key=settings.openai_api_key)
         self.model = settings.openai_model
+        self.gemini_client = genai.Client(api_key=settings.gemini_api_key)
+        self.gemini_model = settings.gemini_model
 
     async def analyze_idea(self, transcribed_text: str) -> ExtendedIdeaAnalysis:
         """
@@ -46,17 +52,110 @@ class AIService:
                 ],
                 temperature=0.7,
                 text_format=ExtendedIdeaAnalysis,
+                tools=[
+                    {
+                        "type": "web_search",
+                    }
+                ],
             )
 
             logger.info(
                 f"Successfully generated structured analysis for idea (length: {len(transcribed_text)})"
             )
-            return response.output_parsed
+
+            analysis = response.output_parsed
+
+            # Fetch OG images for sources
+            if analysis.sources:
+                analysis = await self._enrich_sources_with_images(analysis)
+
+            return analysis
 
         except Exception as e:
             logger.error(f"Error generating AI analysis: {e}", exc_info=True)
             # Return a fallback analysis structure
             return self._get_fallback_analysis(transcribed_text)
+
+    async def _enrich_sources_with_images(
+        self, analysis: ExtendedIdeaAnalysis
+    ) -> ExtendedIdeaAnalysis:
+        """
+        Enrich sources with OG images fetched from their URLs.
+
+        Args:
+            analysis: The analysis with sources to enrich
+
+        Returns:
+            Analysis with sources enriched with image URLs
+        """
+        if not analysis.sources:
+            return analysis
+
+        async with OGImageService() as og_service:
+            # Fetch images for all sources concurrently
+            tasks = [
+                self._fetch_source_image(og_service, source)
+                for source in analysis.sources
+            ]
+            enriched_sources = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # Update sources with image URLs
+            updated_sources = []
+            for i, source in enumerate(analysis.sources):
+                if i < len(enriched_sources) and not isinstance(
+                    enriched_sources[i], Exception
+                ):
+                    image_url = enriched_sources[i]
+                    updated_sources.append(
+                        Source(
+                            title=source.title,
+                            url=source.url,
+                            checked=source.checked,
+                            image_url=image_url,
+                        )
+                    )
+                else:
+                    # Keep original source if image fetch failed
+                    updated_sources.append(source)
+
+            # Create new analysis with updated sources
+            return ExtendedIdeaAnalysis(
+                problem_statement=analysis.problem_statement,
+                summary=analysis.summary,
+                strengths=analysis.strengths,
+                weaknesses=analysis.weaknesses,
+                opportunities=analysis.opportunities,
+                threats=analysis.threats,
+                actionable_items=analysis.actionable_items,
+                validation_priority=analysis.validation_priority,
+                saturation_score=analysis.saturation_score,
+                juicy_score=analysis.juicy_score,
+                sources=updated_sources,
+            )
+
+    async def _fetch_source_image(
+        self, og_service: OGImageService, source: Source
+    ) -> Optional[str]:
+        """
+        Fetch OG image for a single source.
+
+        Args:
+            og_service: The OG image service instance
+            source: The source to fetch image for
+
+        Returns:
+            Image URL if found, None otherwise
+        """
+        try:
+            image_url = await og_service.fetch_og_image(source.url)
+            if image_url:
+                logger.info(f"Fetched OG image for source {source.title}: {image_url}")
+            else:
+                logger.debug(f"No OG image found for source {source.title}")
+            return image_url
+        except Exception as e:
+            logger.warning(f"Error fetching OG image for source {source.title}: {e}")
+            return None
 
     def _build_analysis_prompt(self, transcribed_text: str) -> str:
         """Build the prompt for AI analysis."""

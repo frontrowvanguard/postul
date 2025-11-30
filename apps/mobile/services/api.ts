@@ -4,6 +4,7 @@ export interface Source {
   title: string;
   url: string;
   checked: boolean;
+  image_url?: string | null;
 }
 
 export interface IdeaAnalysis {
