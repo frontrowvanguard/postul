@@ -25,6 +25,7 @@ import Animated, {
 import { defaultFontFamily } from '@/constants/theme';
 import { apiService, Idea, Project } from '@/services/api';
 import { BottomNavigation } from '@/components/bottom-navigation';
+import { SourceAvatar } from '@/components/source-avatar';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -72,7 +73,7 @@ export default function ProjectDetailScreen() {
     const [idea, setIdea] = useState<Idea | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [summaryExpanded, setSummaryExpanded] = useState(false);
-    const [conversationMode, setConversationMode] = useState<'single-turn' | 'tiki-taka'>('single-turn');
+    const [conversationMode] = useState<'single-turn' | 'tiki-taka'>('single-turn');
 
     const loadProjectData = useCallback(async () => {
         if (!id) return;
@@ -222,12 +223,25 @@ export default function ProjectDetailScreen() {
                                     </Pressable>
                                 )}
 
-                                {/* Placeholder Images */}
-                                <View style={styles.imagePlaceholders}>
-                                    <View style={styles.imagePlaceholder} />
-                                    <View style={styles.imagePlaceholder} />
-                                    <View style={styles.imagePlaceholder} />
-                                </View>
+                                {/* Source Images Carousel */}
+                                {analysis?.sources && analysis.sources.length > 0 ? (
+                                    <View style={styles.imageCarousel}>
+                                        {analysis.sources.slice(0, 3).map((source, index) => (
+                                            <SourceAvatar
+                                                key={index}
+                                                imageUrl={source.image_url}
+                                                title={source.title}
+                                                size={80}
+                                            />
+                                        ))}
+                                    </View>
+                                ) : (
+                                    <View style={styles.imagePlaceholders}>
+                                        <View style={styles.imagePlaceholder} />
+                                        <View style={styles.imagePlaceholder} />
+                                        <View style={styles.imagePlaceholder} />
+                                    </View>
+                                )}
 
                                 {/* Scores */}
                                 <View style={styles.scoresContainer}>
@@ -334,7 +348,7 @@ export default function ProjectDetailScreen() {
                                             }
                                             router.push(`/project/${id}/survey-post` as any);
                                         }}>
-                                        <LiquidGlassView style={styles.actionAgentButtonInner} interactive effect="clear">
+                                        <LiquidGlassView style={styles.actionAgentButtonInner} interactive >
                                             <Ionicons name="logo-twitter" size={28} color="#ffffff" style={{ alignSelf: 'flex-start' }} />
                                             <Text style={[styles.actionAgentText, { fontWeight: '700', color: '#fff', paddingTop: 30, paddingLeft: 5 }]}>
                                                 Create a survey post
@@ -353,9 +367,11 @@ export default function ProjectDetailScreen() {
                                                 if (Platform.OS === 'ios') {
                                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                                                 }
+
+                                                Alert.alert('Coming soon', 'This feature is coming soon');
                                             }}>
-                                            <LiquidGlassView style={styles.actionAgentButtonInner} interactive effect="clear">
-                                                <Text style={styles.actionAgentText}>{label}</Text>
+                                            <LiquidGlassView style={[styles.actionAgentButtonInner, { backgroundColor: '#D1D5DB', opacity: 0.4 }]} interactive={false} effect="none">
+                                                <Text style={[styles.actionAgentText, { color: '#A1A1AA' }]}>{label}</Text>
                                             </LiquidGlassView>
                                         </AnimatedButton>
                                     ))}
@@ -549,6 +565,11 @@ const styles = StyleSheet.create({
         color: '#A8E6CF',
         fontFamily: defaultFontFamily,
     },
+    imageCarousel: {
+        flexDirection: 'row',
+        gap: 12,
+        marginVertical: 16,
+    },
     imagePlaceholders: {
         flexDirection: 'row',
         gap: 12,
@@ -643,6 +664,14 @@ const styles = StyleSheet.create({
     },
     actionAgentButtonWithIcon: {
         minHeight: 90,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.08,
+                shadowRadius: 16,
+            },
+        }),
     },
     actionAgentButtonInner: {
         padding: 12,
