@@ -1,4 +1,4 @@
-# server/bot/discord_bot.py
+# server/bot/main.py
 import os
 import logging
 import asyncio
