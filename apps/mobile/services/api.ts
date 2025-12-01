@@ -110,6 +110,46 @@ export interface GenerateSurveyPostsResponse {
   messages: SurveyPostMessage[];
 }
 
+export type FlyerStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+export interface Flyer {
+  id: number;
+  user_id: string;
+  project_id: number;
+  idea_id: number;
+  image_url: string | null;
+  edit_count: number;
+  conversation_history: Array<{ role: string; content: string }> | null;
+  status: FlyerStatus;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GenerateFlyerRequest {
+  project_id: number;
+  idea_id: number;
+}
+
+export interface GenerateFlyerResponse {
+  flyer_id: number;
+  image_url: string | null;
+  edit_count: number;
+  status: FlyerStatus;
+}
+
+export interface EditFlyerRequest {
+  edit_instruction: string;
+  conversation_history?: Array<{ role: string; content: string }> | null;
+}
+
+export interface EditFlyerResponse {
+  image_url: string | null;
+  edit_count: number;
+  conversation_history: Array<{ role: string; content: string }>;
+  status: FlyerStatus;
+}
+
 class ApiService {
   private baseUrl: string;
 
@@ -237,6 +277,28 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  }
+
+  async generateFlyer(data: GenerateFlyerRequest): Promise<GenerateFlyerResponse> {
+    return this.request<GenerateFlyerResponse>('/api/v1/flyers/generate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async editFlyer(flyerId: number, data: EditFlyerRequest): Promise<EditFlyerResponse> {
+    return this.request<EditFlyerResponse>(`/api/v1/flyers/${flyerId}/edit`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getFlyer(flyerId: number): Promise<Flyer> {
+    return this.request<Flyer>(`/api/v1/flyers/${flyerId}`);
+  }
+
+  async getFlyerByProject(projectId: number): Promise<Flyer> {
+    return this.request<Flyer>(`/api/v1/flyers/project/${projectId}`);
   }
 }
 

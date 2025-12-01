@@ -143,7 +143,6 @@ export default function HomeScreen() {
       setIsLoading(true);
       const fetchedProjects = await apiService.getProjects();
       setProjects(fetchedProjects);
-      console.log('Fetched projects:', fetchedProjects);
     } catch (error: any) {
       console.error('Error fetching projects:', error);
       Alert.alert(
@@ -158,7 +157,6 @@ export default function HomeScreen() {
   const analyzeIdea = async (transcribedText: string) => {
     try {
       setIsAnalyzing(true);
-      console.log('Analyzing idea:', transcribedText);
 
       // Step 1: Generate project details and create project first
       const projectDetailsResponse = await apiService.generateProjectDetails({
@@ -270,7 +268,7 @@ export default function HomeScreen() {
           inference_steps: 2,
           style_id: 0,
         });
-        
+
         if (!isMounted) return;
 
         // Create data URI from base64 audio

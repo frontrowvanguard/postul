@@ -424,12 +424,17 @@ export default function ProjectDetailScreen() {
                                 <Text style={styles.sectionTitle}>Standalone Polls/Enablers</Text>
                                 <View style={styles.pollsContainer}>
                                     {[
-                                        'Create a Kahoot!',
-                                        'Create a Landing page',
-                                        'Create interview script',
-                                        'Write an email draft',
-                                        'Create QR for ideation',
-                                    ].map((label, index) => (
+                                        { label: 'Create a Kahoot!', action: () => {} },
+                                        { label: 'Create a Landing page', action: () => {} },
+                                        { label: 'Create interview script', action: () => {} },
+                                        { label: 'Write an email draft', action: () => {} },
+                                        {
+                                            label: 'Create QR for ideation',
+                                            action: () => {
+                                                router.push(`/project/${id}/flyer` as any);
+                                            },
+                                        },
+                                    ].map((item, index) => (
                                         <AnimatedButton
                                             key={index}
                                             style={styles.pollButton}
@@ -437,9 +442,10 @@ export default function ProjectDetailScreen() {
                                                 if (Platform.OS === 'ios') {
                                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                                                 }
+                                                item.action();
                                             }}>
                                             <LiquidGlassView style={styles.pollButtonInner} interactive effect="clear">
-                                                <Text style={styles.pollButtonText}>{label}</Text>
+                                                <Text style={styles.pollButtonText}>{item.label}</Text>
                                             </LiquidGlassView>
                                         </AnimatedButton>
                                     ))}
