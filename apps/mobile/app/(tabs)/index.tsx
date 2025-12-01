@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { Audio } from 'expo-av';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 
 import { defaultFontFamily } from '@/constants/theme';
 import { apiService, Project, TikiTakaMessage } from '@/services/api';
@@ -504,7 +504,10 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <LinearGradient
         colors={['#E0D9E8', '#F2C5D6', '#F6D3B5']}
@@ -787,7 +790,7 @@ export default function HomeScreen() {
           }}
         />
       </LinearGradient>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
