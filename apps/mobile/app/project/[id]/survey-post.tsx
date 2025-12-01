@@ -99,7 +99,7 @@ export default function SurveyPostScreen() {
                         }
                         return msg;
                     });
-                    
+
                     setPostMessages(messagesWithPolls);
                     setSelectedMessageIndex(0);
                     setEditingText(messagesWithPolls[0].text);
@@ -259,11 +259,6 @@ export default function SurveyPostScreen() {
                 if (Platform.OS === 'ios') {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }
-
-                // Navigate back after a short delay
-                setTimeout(() => {
-                    router.back();
-                }, 500);
             } else {
                 Alert.alert(
                     'Cannot Open',
@@ -408,10 +403,10 @@ export default function SurveyPostScreen() {
                                             editingPollOptions.length >= 2
                                                 ? editingPollOptions
                                                 : [
-                                                      { text: "I'm in! 🎯" },
-                                                      { text: 'Maybe later' },
-                                                      { text: 'Not my thing' },
-                                                  ]
+                                                    { text: "I'm in! 🎯" },
+                                                    { text: 'Maybe later' },
+                                                    { text: 'Not my thing' },
+                                                ]
                                         }
                                         platform={selectedPlatform}
                                     />
