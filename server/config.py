@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # Gemini Configuration
     gemini_api_key: str = Field(..., description="Gemini API key")
     gemini_model: str = Field(
-        default="gemini-3-pro-image-preview", description="Gemini model to use"
+        default="gemini-2.5-flash-image", description="Gemini model to use"
     )
 
     # Application Configuration

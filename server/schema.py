@@ -160,3 +160,50 @@ class GenerateSurveyPostsRequest(BaseModel):
 class GenerateSurveyPostsResponse(BaseModel):
     """Response model for generated survey posts."""
     messages: List[SurveyPostMessage] = Field(..., description="List of generated survey post messages")
+
+
+# Flyer generation models
+class GenerateFlyerRequest(BaseModel):
+    """Request model for generating a flyer."""
+    project_id: int = Field(..., description="Project ID to generate flyer for")
+    idea_id: int = Field(..., description="Idea ID to generate flyer for")
+
+
+class GenerateFlyerResponse(BaseModel):
+    """Response model for flyer generation."""
+    flyer_id: int = Field(..., description="Generated flyer ID")
+    image_url: Optional[str] = Field(None, description="URL to the generated flyer image (null if still processing)")
+    edit_count: int = Field(default=0, description="Number of edits made so far")
+    status: str = Field(default="pending", description="Status: pending, processing, completed, failed")
+
+
+class EditFlyerRequest(BaseModel):
+    """Request model for editing a flyer."""
+    edit_instruction: str = Field(..., min_length=1, description="Natural language instruction for editing the flyer")
+    conversation_history: Optional[List[dict]] = Field(default=None, description="Previous conversation history for multi-turn editing")
+
+
+class EditFlyerResponse(BaseModel):
+    """Response model for flyer editing."""
+    image_url: Optional[str] = Field(None, description="URL to the edited flyer image (null if still processing)")
+    edit_count: int = Field(..., description="Updated number of edits")
+    conversation_history: List[dict] = Field(..., description="Updated conversation history")
+    status: str = Field(default="processing", description="Status: processing, completed, failed")
+
+
+class FlyerResponse(BaseModel):
+    """Complete flyer response model."""
+    id: int
+    user_id: str
+    project_id: int
+    idea_id: int
+    image_url: Optional[str]
+    edit_count: int
+    conversation_history: Optional[List[dict]]
+    status: str = Field(default="pending", description="Status: pending, processing, completed, failed")
+    error_message: Optional[str] = Field(None, description="Error message if status is failed")
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

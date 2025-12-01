@@ -7,7 +7,7 @@ import uvicorn
 
 from config import settings
 from database import init_db, engine
-from routers import ideas, projects, tts
+from routers import ideas, projects, tts, flyers
 from schema import HealthResponse
 
 # Configure logging
@@ -61,6 +61,7 @@ app.add_middleware(
 app.include_router(ideas.router)
 app.include_router(projects.router)
 app.include_router(tts.router)
+app.include_router(flyers.router)
 
 
 # Health check endpoint
@@ -106,6 +107,7 @@ def main():
         port=8000,
         reload=settings.debug,
         log_level="debug" if settings.debug else "info",
+        timeout_keep_alive=200,  # 200 seconds keep-alive timeout
     )
 
 

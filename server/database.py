@@ -97,6 +97,29 @@ class Idea(Base):
         return f"<Idea(id={self.id}, user_id='{self.user_id}', project_id={self.project_id})>"
 
 
+class Flyer(Base):
+    """Flyer model for storing generated flyers and editing state."""
+
+    __tablename__ = "flyers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, nullable=False, index=True)  # Supabase user UUID
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True)
+    idea_id = Column(Integer, ForeignKey("ideas.id"), nullable=False, index=True)
+    image_url = Column(Text, nullable=True)  # URL to generated flyer image
+    edit_count = Column(Integer, default=0, nullable=False)  # Track number of edits (max 5)
+    conversation_history = Column(JSON, nullable=True)  # Store multi-turn editing conversation
+    status = Column(String, default="pending", nullable=False)  # pending, processing, completed, failed
+    error_message = Column(Text, nullable=True)  # Error message if status is failed
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    def __repr__(self):
+        return f"<Flyer(id={self.id}, project_id={self.project_id}, edit_count={self.edit_count})>"
+
+
 # Database dependency for FastAPI
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency to get database session."""
