@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    KeyboardAvoidingView,
     Platform,
     Pressable,
     ScrollView,
@@ -423,23 +424,35 @@ export default function ProjectDetailScreen() {
                                 {/* Standalone Polls/Enablers */}
                                 <Text style={styles.sectionTitle}>Standalone Polls/Enablers</Text>
                                 <View style={styles.pollsContainer}>
+                                    <AnimatedButton
+                                        style={[styles.pollButton, { height: 50 }]}
+                                        onPress={() => {
+                                            if (Platform.OS === 'ios') {
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                            }
+                                            router.push(`/project/${id}/flyer` as any);
+                                        }}>
+                                        <LiquidGlassView style={styles.pollButtonInner} interactive effect="clear">
+                                            <Text style={styles.pollButtonText}>Create a flyer</Text>
+                                        </LiquidGlassView>
+                                    </AnimatedButton>
                                     {[
-                                        'Create a Kahoot!',
-                                        'Create a Landing page',
-                                        'Create interview script',
-                                        'Write an email draft',
-                                        'Create QR for ideation',
-                                    ].map((label, index) => (
+                                        { label: 'Create a Kahoot!', action: () => { } },
+                                        { label: 'Create a Landing page', action: () => { } },
+                                        { label: 'Create interview script', action: () => { } },
+                                        { label: 'Write an email draft', action: () => { } },
+                                    ].map((item, index) => (
                                         <AnimatedButton
                                             key={index}
-                                            style={styles.pollButton}
+                                            style={[styles.pollButton, { backgroundColor: '#D1D5DB', opacity: 0.4, borderRadius: 16 }]}
                                             onPress={() => {
                                                 if (Platform.OS === 'ios') {
                                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                                                 }
+                                                Alert.alert('Coming soon', 'This feature is coming soon');
                                             }}>
                                             <LiquidGlassView style={styles.pollButtonInner} interactive effect="clear">
-                                                <Text style={styles.pollButtonText}>{label}</Text>
+                                                <Text style={styles.pollButtonText}>{item.label}</Text>
                                             </LiquidGlassView>
                                         </AnimatedButton>
                                     ))}
@@ -461,52 +474,55 @@ export default function ProjectDetailScreen() {
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             }
                         }}>
-                        <Pressable
-                            onPress={(e) => e.stopPropagation()}
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                             style={styles.textInputCardContainer}>
-                            <LiquidGlassView style={styles.textInputCard} interactive effect="clear">
-                                <View style={styles.textInputHeader}>
-                                    <Text style={styles.textInputTitle}>Enter your message</Text>
-                                    <Pressable
-                                        onPress={() => {
-                                            setIsTextInputVisible(false);
-                                            setTextInput('');
-                                            if (Platform.OS === 'ios') {
-                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                            }
-                                        }}>
-                                        <Ionicons name="close" size={24} color="#fff" />
-                                    </Pressable>
-                                </View>
-                                <TextInput
-                                    style={styles.textInput}
-                                    value={textInput}
-                                    onChangeText={setTextInput}
-                                    placeholder="Type your message here..."
-                                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                                    multiline
-                                    autoFocus
-                                    textAlignVertical="top"
-                                />
-                                <View style={styles.textInputActions}>
-                                    <Pressable
-                                        style={[styles.textInputButton, !textInput.trim() && styles.textInputButtonDisabled]}
-                                        onPress={() => {
-                                            if (!textInput.trim()) return;
-                                            setIsTextInputVisible(false);
-                                            const inputText = textInput.trim();
-                                            setTextInput('');
-                                            if (Platform.OS === 'ios') {
-                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                            }
-                                            handleTextSubmission(inputText);
-                                        }}
-                                        disabled={!textInput.trim()}>
-                                        <Text style={styles.textInputButtonText}>Send</Text>
-                                    </Pressable>
-                                </View>
-                            </LiquidGlassView>
-                        </Pressable>
+                            <Pressable
+                                onPress={(e) => e.stopPropagation()}>
+                                <LiquidGlassView style={styles.textInputCard} interactive effect="clear">
+                                    <View style={styles.textInputHeader}>
+                                        <Text style={styles.textInputTitle}>Enter your message</Text>
+                                        <Pressable
+                                            onPress={() => {
+                                                setIsTextInputVisible(false);
+                                                setTextInput('');
+                                                if (Platform.OS === 'ios') {
+                                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                }
+                                            }}>
+                                            <Ionicons name="close" size={24} color="#fff" />
+                                        </Pressable>
+                                    </View>
+                                    <TextInput
+                                        style={styles.textInput}
+                                        value={textInput}
+                                        onChangeText={setTextInput}
+                                        placeholder="Type your message here..."
+                                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                                        multiline
+                                        autoFocus
+                                        textAlignVertical="top"
+                                    />
+                                    <View style={styles.textInputActions}>
+                                        <Pressable
+                                            style={[styles.textInputButton, !textInput.trim() && styles.textInputButtonDisabled]}
+                                            onPress={() => {
+                                                if (!textInput.trim()) return;
+                                                setIsTextInputVisible(false);
+                                                const inputText = textInput.trim();
+                                                setTextInput('');
+                                                if (Platform.OS === 'ios') {
+                                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                                }
+                                                handleTextSubmission(inputText);
+                                            }}
+                                            disabled={!textInput.trim()}>
+                                            <Text style={styles.textInputButtonText}>Send</Text>
+                                        </Pressable>
+                                    </View>
+                                </LiquidGlassView>
+                            </Pressable>
+                        </KeyboardAvoidingView>
                     </Pressable>
                 )}
 

@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { Audio } from 'expo-av';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 
 import { defaultFontFamily } from '@/constants/theme';
 import { apiService, Project, TikiTakaMessage } from '@/services/api';
@@ -143,7 +143,6 @@ export default function HomeScreen() {
       setIsLoading(true);
       const fetchedProjects = await apiService.getProjects();
       setProjects(fetchedProjects);
-      console.log('Fetched projects:', fetchedProjects);
     } catch (error: any) {
       console.error('Error fetching projects:', error);
       Alert.alert(
@@ -158,7 +157,6 @@ export default function HomeScreen() {
   const analyzeIdea = async (transcribedText: string) => {
     try {
       setIsAnalyzing(true);
-      console.log('Analyzing idea:', transcribedText);
 
       // Step 1: Generate project details and create project first
       const projectDetailsResponse = await apiService.generateProjectDetails({
@@ -270,7 +268,7 @@ export default function HomeScreen() {
           inference_steps: 2,
           style_id: 0,
         });
-        
+
         if (!isMounted) return;
 
         // Create data URI from base64 audio
@@ -506,7 +504,10 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <LinearGradient
         colors={['#E0D9E8', '#F2C5D6', '#F6D3B5']}
@@ -789,7 +790,7 @@ export default function HomeScreen() {
           }}
         />
       </LinearGradient>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
