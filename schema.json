@@ -1,0 +1,43 @@
+{
+"$schema": "http://json-schema.org/draft-07/schema#",
+"title": "rhlf_feedback_item",
+"type": "object",
+"required": ["id","user_id","timestamp","context","output","feedback","source_model"],
+"properties": {
+"id": {"type":"string","description":"Unique feedback id (uuid)"},
+"user_id": {"type":"string","description":"Anonymized user id or device id"},
+"timestamp": {"type":"string","format":"date-time"},
+"app_version": {"type":"string"},
+"context": {"type":"object","description":"Prompt and relevant user state","properties":{
+"product_idea": {"type":"string"},
+"target_audience": {"type":"string"},
+"goal":"{\"type\":\"string\"}",
+"previous_tests": {"type":"array","items":{"type":"string"}}
+}},
+"output": {"type":"object","description":"Model generated content","properties":{
+"type": {"type":"string","description":"e.g., 'validation_plan','survey','interview_script'"},
+"content": {"type":"string"},
+"tokens": {"type":"integer"}
+}},
+"source_model": {"type":"string","description":"Model, weight, or variant used"},
+"feedback": {"type":"object","description":"User feedback structured","properties":{
+"rating": {"type":"integer","minimum":1,"maximum":5},
+"usefulness": {"type":"integer","minimum":1,"maximum":5},
+"clarity": {"type":"integer","minimum":1,"maximum":5},
+"bias_check": {"type":"boolean","description":"user flags leading questions / biased phrasing"},
+"would_follow": {"type":"integer","minimum":1,"maximum":5,"description":"how likely the user would follow this plan"},
+"free_text": {"type":"string","maxLength":2000}
+},"required":["rating"]},
+"system_annotations": {"type":"object","description":"Auto annotations for filtering/quality","properties":{
+"contains_personal_data": {"type":"boolean"},
+"contains_actionable_recruitment_steps": {"type":"boolean"},
+"policy_violations": {"type":"array","items":{"type":"string"}}
+}},
+"human_labels": {"type":"object","description":"Optional expert labels used for supervised signals","properties":{
+"preference_batch_id": {"type":"string"},
+"labeler_id": {"type":"string"},
+"label_score": {"type":"number","minimum":0,"maximum":1},
+"comment": {"type":"string"}
+}}
+}
+}
