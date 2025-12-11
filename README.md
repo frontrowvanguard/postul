@@ -2,7 +2,24 @@
 
 **Postul** is an AI-powered platform where your ideas, theories, and hypotheses are postulated and valued. It helps aspiring entrepreneurs and educators validate startup ideas before building, guiding users to clarify problems and test assumptions with smart, research-backed prompts.
 
-[![All Contributors](https://img.shields.io/github/all-contributors/projectOwner/projectName?color=ee8449&style=flat-square)](#contributors)
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://ahnsv.github.io/"><img src="https://avatars.githubusercontent.com/u/24207964?v=4?s=100" width="100px;" alt="Tae/Humphrey"/><br /><sub><b>Tae/Humphrey</b></sub></a><br /><a href="#projectManagement-ahnsv" title="Project Management">📆</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/RealAndrewRen"><img src="https://avatars.githubusercontent.com/u/108499792?v=4?s=100" width="100px;" alt="Andrew Ren"/><br /><sub><b>Andrew Ren</b></sub></a><br /><a href="#business-RealAndrewRen" title="Business development">💼</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 
 ## 🎯 Overview
@@ -298,22 +315,3 @@ For questions, issues, or feature requests, please open an issue on GitHub.
 ---
 
 **Postul** - Where ideas are postulated and valued. 🚀
-
-## Contributors
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://ahnsv.github.io/"><img src="https://avatars.githubusercontent.com/u/24207964?v=4?s=100" width="100px;" alt="Tae/Humphrey"/><br /><sub><b>Tae/Humphrey</b></sub></a><br /><a href="#projectManagement-ahnsv" title="Project Management">📆</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/RealAndrewRen"><img src="https://avatars.githubusercontent.com/u/108499792?v=4?s=100" width="100px;" alt="Andrew Ren"/><br /><sub><b>Andrew Ren</b></sub></a><br /><a href="#business-RealAndrewRen" title="Business development">💼</a></td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
